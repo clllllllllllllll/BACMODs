@@ -3,6 +3,7 @@
 import AddModuleSearch from "@/components/modules/AddModuleSearch";
 import AutoPickMenu from "@/components/modules/AutoPickMenu";
 import ModuleCard from "@/components/modules/ModuleCard";
+import WeekPreview from "@/components/modules/WeekPreview";
 import Banner from "@/components/ui/Banner";
 import { usePlan } from "@/hooks/use-plan";
 import { MOCK_DATASET } from "@/lib/mock/dataset";
@@ -37,7 +38,8 @@ export default function ModulesScreen() {
   );
 
   return (
-    <>
+    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(26rem,30rem)_1fr] lg:items-start lg:gap-6">
+      <div className="flex min-w-0 flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-heading">Modules</h1>
         <AutoPickMenu />
@@ -75,6 +77,8 @@ export default function ModulesScreen() {
         Unofficial planning tool. Check the registration system before you register. Sample data · version{" "}
         {dataset.version}.
       </p>
-    </>
+      </div>
+      <WeekPreview plan={plan} dataset={dataset} />
+    </div>
   );
 }

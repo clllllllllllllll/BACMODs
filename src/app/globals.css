@@ -164,6 +164,13 @@ dialog.sheet {
   box-shadow: var(--shadow-popover);
   overflow: auto;
 }
+/* Desktop: a centred dialog instead of a bottom sheet (design.md §4). */
+@media (min-width: 1024px) {
+  dialog.sheet {
+    margin: auto;
+    max-width: 30rem;
+  }
+}
 dialog.sheet::backdrop {
   background: var(--color-scrim);
 }

@@ -74,7 +74,7 @@ export function makeInitialPlan(dataset: TermDataset, intake: string, term: stri
     added: [],
     selection: {},
     colors: {},
-    view: "day",
+    view: "auto",
     week: 1,
   };
   const used: ModuleColor[] = [];

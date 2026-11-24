@@ -7,8 +7,8 @@ import { SetupForm } from "@/components/layout/SetupSheet";
 export default function SetupScreen() {
   const router = useRouter();
   return (
-    <>
-      <div className="flex flex-col gap-2 pt-4">
+    <div className="flex flex-col gap-4 lg:mt-8 lg:gap-5 lg:rounded-sheet lg:border lg:border-line lg:bg-card lg:p-8">
+      <div className="flex flex-col gap-2 pt-4 lg:pt-0">
         <h1 className="text-heading">Plan your BAC timetable</h1>
         <p className="text-body text-fg-secondary">
           Choose your intake and trimester, pick a section for each class and spot clashes before you register.
@@ -18,6 +18,6 @@ export default function SetupScreen() {
       <p className="text-small text-fg-secondary">
         Unofficial planning tool. Always check the registration system. Showing sample data only.
       </p>
-    </>
+    </div>
   );
 }

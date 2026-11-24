@@ -11,7 +11,7 @@ export default function ShareSheet({ open, onClose }: { open: boolean; onClose: 
   const copy = useCopy();
   const path = `/?share=${MOCK_SHARE_CODE}`;
   return (
-    <BottomSheet open={open} onClose={onClose} title="Share your plan" radius="rounded-t-share">
+    <BottomSheet open={open} onClose={onClose} title="Share your plan" radius="rounded-t-share lg:rounded-share">
       <div className="flex flex-col gap-4">
         <p className="text-body text-fg-secondary">Anyone with this code can load your sections. No personal data is shared.</p>
         <div className="flex flex-col gap-1.5">

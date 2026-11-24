@@ -15,6 +15,7 @@ export default function ExportScreen() {
   return (
     <>
       <h1 className="text-heading">Export</h1>
+      <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6">
       <SectionList plan={plan} dataset={MOCK_DATASET} />
       <div className="flex flex-col gap-3">
         <ExportTile
@@ -30,6 +31,7 @@ export default function ExportScreen() {
           description="Send your plan to a friend"
           onClick={() => setShareOpen(true)}
         />
+      </div>
       </div>
       <ShareSheet open={shareOpen} onClose={() => setShareOpen(false)} />
     </>

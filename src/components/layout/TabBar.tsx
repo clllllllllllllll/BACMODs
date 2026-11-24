@@ -10,10 +10,14 @@ const TABS = [
   { href: "/export", label: "Export" },
 ] as const;
 
-export default function TabBar() {
+/** `inline` is the desktop form that sits in the Header row; otherwise it is the second row. */
+export default function TabBar({ inline = false }: { inline?: boolean }) {
   const pathname = usePathname();
   return (
-    <nav aria-label="Main" className="flex h-[41px] gap-6 border-b border-line bg-card px-4">
+    <nav
+      aria-label="Main"
+      className={`flex gap-6 px-4 lg:px-0 ${inline ? "h-14" : "h-[41px]"}`}
+    >
       {TABS.map((tab) => {
         const active = pathname === tab.href;
         return (
@@ -21,8 +25,10 @@ export default function TabBar() {
             key={tab.href}
             href={tab.href}
             aria-current={active ? "page" : undefined}
-            className={`focus-ring -mb-px flex items-center border-b-2 text-body-medium ${
-              active ? "border-primary text-primary" : "border-transparent text-fg-secondary"
+            className={`focus-ring flex items-center border-b-2 text-body-medium ${inline ? "border-t-2 border-t-transparent" : "-mb-px"} ${
+              active
+                ? "border-b-primary text-primary"
+                : "border-b-transparent text-fg-secondary hover:text-fg"
             }`}
           >
             {tab.label}

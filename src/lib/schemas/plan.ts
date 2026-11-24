@@ -18,7 +18,8 @@ export const PlanSchema = z.object({
   selection: SelectionSchema,
   /** Stored with the plan so a module keeps its colour (design.md §2). */
   colors: z.record(z.string(), ModuleColorSchema),
-  view: z.enum(["day", "week"]),
+  /** "auto" follows the screen: Week on desktop, Day elsewhere, until the student picks one. */
+  view: z.enum(["auto", "day", "week"]),
   week: z.number().int().min(1),
 });
 

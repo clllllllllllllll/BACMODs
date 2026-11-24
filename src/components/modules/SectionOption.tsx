@@ -24,7 +24,7 @@ export default function SectionOption({
   return (
     <label
       className={`relative flex cursor-pointer items-start gap-3 rounded-clash border px-3 py-2.5 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-primary ${
-        clash ? "border-danger bg-danger-50" : selected ? "border-primary bg-primary-50" : "border-line bg-card"
+        clash ? "border-danger bg-danger-50" : selected ? "border-primary bg-primary-50" : "border-line bg-card hover:bg-page"
       }`}
     >
       <input type="radio" name={name} checked={selected} onChange={onSelect} className="peer sr-only" />

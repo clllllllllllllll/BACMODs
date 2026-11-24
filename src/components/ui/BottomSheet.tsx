@@ -10,7 +10,7 @@ export default function BottomSheet({
   open,
   onClose,
   title,
-  radius = "rounded-t-sheet",
+  radius = "rounded-t-sheet lg:rounded-sheet",
   children,
 }: {
   open: boolean;
@@ -40,8 +40,8 @@ export default function BottomSheet({
         if (e.target === ref.current) onClose();
       }}
     >
-      <div className="px-4 pb-6 pt-2">
-        <div aria-hidden="true" className="mx-auto mb-3 h-1 w-10 rounded-handle bg-line" />
+      <div className="px-4 pb-6 pt-2 lg:px-6 lg:pt-5">
+        <div aria-hidden="true" className="mx-auto mb-3 h-1 w-10 rounded-handle bg-line lg:hidden" />
         <h2 id={titleId} className="mb-4 text-heading">
           {title}
         </h2>
