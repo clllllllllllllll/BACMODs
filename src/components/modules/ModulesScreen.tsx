@@ -39,7 +39,7 @@ export default function ModulesScreen() {
   );
 
   return (
-    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[minmax(26rem,30rem)_1fr] lg:items-start lg:gap-6">
+    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-[clamp(26rem,40vw,30rem)_minmax(0,1fr)] lg:items-start lg:gap-6">
       <div className="flex min-w-0 flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-heading">Modules</h1>

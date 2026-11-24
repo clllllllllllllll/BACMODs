@@ -39,7 +39,7 @@ const raw: TermDataset = {
         section("LTR", "ALL", session(1, "09:00", "11:00", "Sample Hall 1")),
         section("TUT", "T1", session(3, "10:00", "12:00", "Sample Room 2-01", range(2, 13))),
         section("TUT", "T2", session(3, "14:00", "16:00", "Sample Room 2-01", range(2, 13))),
-        section("TUT", "T3", session(4, "09:00", "11:00", "Sample Room 2-03", range(2, 13))),
+        section("TUT", "T3", session(2, "10:00", "11:30", "Sample Room 2-03", range(2, 13))),
       ],
     },
     INF1107: {

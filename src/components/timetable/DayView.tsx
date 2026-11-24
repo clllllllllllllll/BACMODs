@@ -11,6 +11,7 @@ import type { PlannedSession } from "@/lib/plan";
 import { clashingIndexes } from "@/lib/clash";
 import type { TermCalendar } from "@/lib/schemas/dataset";
 import { DAY_LONG, DAY_SHORT, formatDuration, toMinutes } from "@/lib/time";
+import { gapsBeforeSessions } from "@/lib/timetable";
 
 function DayEvent({ item, clash }: { item: PlannedSession; clash: boolean }) {
   const style = MODULE_STYLES[item.color];
@@ -63,6 +64,7 @@ export default function DayView({
     .filter((i) => i.session.day === day)
     .sort((a, b) => toMinutes(a.session.start) - toMinutes(b.session.start));
   const clashing = clashingIndexes(dayItems);
+  const gaps = gapsBeforeSessions(dayItems.map((item) => item.session));
 
   return (
     <div className="flex flex-col gap-4">
@@ -96,8 +98,7 @@ export default function DayView({
           </li>
         ) : (
           dayItems.flatMap((item, i) => {
-            const prev = dayItems[i - 1];
-            const gap = prev ? toMinutes(item.session.start) - toMinutes(prev.session.end) : 0;
+            const gap = gaps[i];
             const key = `${item.moduleCode}-${item.lessonType}-${item.session.start}`;
             return [
               gap >= 30 ? <FreeGap key={`gap-${key}`} minutes={gap} /> : null,

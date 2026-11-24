@@ -5,24 +5,11 @@ import { clashingIndexes } from "@/lib/clash";
 import { venueLabel } from "@/lib/format";
 import type { PlannedSession } from "@/lib/plan";
 import { DAY_SHORT, toMinutes } from "@/lib/time";
+import { assignOverlapLanes } from "@/lib/timetable";
 
 const HOUR_HEIGHT = 40;
-
-/** Greedy lane assignment: overlapping blocks are staggered so each stays readable. */
-function assignLanes(items: PlannedSession[]): { lane: number; lanes: number }[] {
-  const order = items.map((_, i) => i).sort((a, b) => toMinutes(items[a].session.start) - toMinutes(items[b].session.start));
-  const lanesOf: number[] = [];
-  const ends: number[] = [];
-  for (const i of order) {
-    const start = toMinutes(items[i].session.start);
-    let lane = ends.findIndex((end) => end <= start);
-    if (lane === -1) lane = ends.length;
-    ends[lane] = toMinutes(items[i].session.end);
-    lanesOf[i] = lane;
-  }
-  const total = Math.max(1, ends.length);
-  return items.map((_, i) => ({ lane: lanesOf[i], lanes: total }));
-}
+const AXIS_WIDTH = 2.25; // rem
+const MIN_LANE_WIDTH = 4; // rem, leaves room for module codes at the Micro size
 
 /** Mon–Fri grid (plus Sat when the plan needs it) with a block per session. */
 export default function WeekView({
@@ -43,39 +30,43 @@ export default function WeekView({
   const lastHour = Math.max(17, ...ends.map((m) => Math.ceil(m / 60)));
   const hours = Array.from({ length: lastHour - firstHour + 1 }, (_, i) => firstHour + i);
   const clashing = clashingIndexes(items);
+  const columns = days.map((day) => {
+    const indexes = items.map((_, i) => i).filter((i) => items[i].session.day === day);
+    const placements = assignOverlapLanes(indexes.map((i) => items[i].session));
+    const minWidth = Math.max(1, ...placements.map(({ lanes }) => lanes)) * MIN_LANE_WIDTH;
+    return { day, indexes, placements, minWidth };
+  });
+  const minWidth = `calc(${AXIS_WIDTH + columns.reduce((width, column) => width + column.minWidth, 0)}rem + 2px)`;
+  const gridTemplateColumns = [`${AXIS_WIDTH}rem`, ...columns.map((c) => `minmax(${c.minWidth}rem, 1fr)`)].join(" ");
 
   return (
-    <div className="flex flex-col">
-      <div className="flex pl-9" aria-hidden="true">
-        {days.map((d) => (
-          <div key={d} className="flex-1 pb-1 text-center text-small-medium text-fg-secondary">
-            {DAY_SHORT[d]}
-          </div>
-        ))}
-      </div>
-      <div
-        role="group"
-        aria-label="Week timetable"
-        className="relative flex rounded-control border border-line bg-card"
-        style={{ height: (lastHour - firstHour) * HOUR_HEIGHT }}
-      >
-        <div className="relative w-9 shrink-0" aria-hidden="true">
-          {hours.slice(0, -1).map((h) => (
-            <span
-              key={h}
-              className="absolute right-1 -translate-y-1/2 text-micro-regular text-fg-secondary"
-              style={{ top: (h - firstHour) * HOUR_HEIGHT }}
-            >
-              {String(h).padStart(2, "0")}
-            </span>
+    <div role="group" aria-label="Week timetable" tabIndex={0} className="focus-ring overflow-x-auto">
+      <div style={{ minWidth }}>
+        <div className="grid border-x border-transparent" style={{ gridTemplateColumns }} aria-hidden="true">
+          <div />
+          {days.map((d) => (
+            <div key={d} className="pb-1 text-center text-small-medium text-fg-secondary">
+              {DAY_SHORT[d]}
+            </div>
           ))}
         </div>
-        {days.map((d) => {
-          const dayIdx = items.map((_, i) => i).filter((i) => items[i].session.day === d);
-          const dayItems = dayIdx.map((i) => items[i]);
-          const lanes = assignLanes(dayItems);
-          return (
-            <div key={d} className="relative flex-1 border-l border-line">
+        <div
+          className="grid rounded-control border border-line bg-card"
+          style={{ gridTemplateColumns, height: (lastHour - firstHour) * HOUR_HEIGHT }}
+        >
+          <div className="relative" aria-hidden="true">
+            {hours.slice(0, -1).map((h) => (
+              <span
+                key={h}
+                className="absolute right-1 -translate-y-1/2 text-micro-regular text-fg-secondary"
+                style={{ top: (h - firstHour) * HOUR_HEIGHT }}
+              >
+                {String(h).padStart(2, "0")}
+              </span>
+            ))}
+          </div>
+          {columns.map(({ day, indexes, placements }) => (
+            <div key={day} className="relative border-l border-line">
               {hours.slice(1, -1).map((h) => (
                 <div
                   key={h}
@@ -84,39 +75,43 @@ export default function WeekView({
                   style={{ top: (h - firstHour) * HOUR_HEIGHT }}
                 />
               ))}
-              {dayItems.map((item, k) => {
-                const clash = clashing.has(dayIdx[k]);
+              {indexes.map((index, k) => {
+                const item = items[index];
+                const clash = clashing.has(index);
                 const style = MODULE_STYLES[item.color];
                 const top = ((toMinutes(item.session.start) - firstHour * 60) / 60) * HOUR_HEIGHT;
                 const height = ((toMinutes(item.session.end) - toMinutes(item.session.start)) / 60) * HOUR_HEIGHT;
-                const { lane, lanes: n } = lanes[k];
+                const { lane, lanes } = placements[k];
+                const width = 100 / lanes;
                 const label = shortLabel(item.lessonType, item.sectionId);
+                const description = `${item.moduleCode} ${label}, ${DAY_SHORT[day]} ${item.session.start} to ${item.session.end}, ${venueLabel(item.session)}${clash ? ", clash" : ""}`;
                 return (
                   <div
-                    key={`${item.moduleCode}-${label}-${item.session.start}`}
+                    key={`${item.moduleCode}-${label}-${item.session.start}-${index}`}
                     role="img"
-                    aria-label={`${item.moduleCode} ${label}, ${DAY_SHORT[d]} ${item.session.start} to ${item.session.end}, ${venueLabel(item.session)}${clash ? ", clash" : ""}`}
-                    className={`absolute overflow-hidden rounded-block px-1 py-0.5 ${style.tint} ${style.text} ${
+                    aria-label={description}
+                    title={description}
+                    className={`absolute overflow-hidden rounded-block px-0.5 py-0.5 ${style.tint} ${style.text} ${
                       clash ? "border-2 border-danger" : "border border-transparent"
                     }`}
                     style={{
                       top: top + 1,
                       height: height - 2,
-                      left: `calc(${lane * 22}% + 1px)`,
-                      width: `calc(${100 - (n - 1) * 22}% - 2px)`,
+                      left: `calc(${lane * width}% + 1px)`,
+                      width: `calc(${width}% - 2px)`,
                     }}
                   >
-                    <span className="flex items-center gap-0.5 text-micro">
+                    <span className="block truncate text-micro">{item.moduleCode}</span>
+                    <span className="flex items-center justify-between gap-0.5 text-micro-regular">
+                      <span className="truncate">{label}</span>
                       {clash ? <Icon name="alert-circle" size={10} /> : null}
-                      {item.moduleCode}
                     </span>
-                    <span className="block text-micro-regular">{label}</span>
                   </div>
                 );
               })}
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
     </div>
   );
