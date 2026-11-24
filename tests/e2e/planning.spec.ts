@@ -214,7 +214,9 @@ test("the desktop preview and timetable fit two and three concurrent class label
   await expectReadableLanes(previewGrid, trio);
 
   await page.getByRole("link", { name: "Timetable" }).click();
-  const timetable = page.getByRole("group", { name: "Week timetable" });
+  await expect(page).toHaveURL(/\/timetable$/);
+  const screen = page.getByRole("main").filter({ has: page.getByRole("heading", { name: "Timetable", level: 1 }) });
+  const timetable = screen.getByRole("group", { name: "Week timetable" });
   await expectReadableLanes(timetable, trio);
   await page.getByRole("button", { name: "Previous week" }).click();
   await expectReadableLanes(timetable, pair);
