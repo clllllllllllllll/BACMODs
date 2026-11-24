@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef } from "react";
+import { useToastDialog } from "@/components/ui/Toast";
 
 /**
  * Modal bottom sheet on the native dialog element: the browser traps focus, closes on Esc and
@@ -21,13 +22,18 @@ export default function BottomSheet({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const setToastDialog = useToastDialog();
 
   useEffect(() => {
     const dialog = ref.current;
     if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
+    if (open) {
+      if (!dialog.open) dialog.showModal();
+      setToastDialog(dialog);
+      return () => setToastDialog((current) => current === dialog ? null : current);
+    }
+    if (dialog.open) dialog.close();
+  }, [open, setToastDialog]);
 
   return (
     <dialog

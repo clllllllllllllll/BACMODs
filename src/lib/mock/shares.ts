@@ -1,5 +1,6 @@
 import { SharePayloadSchema, type SharePayload } from "@/lib/schemas/plan";
 import { MOCK_SHARE_CODE } from "@/lib/mock/dataset";
+import { parseShareInput } from "@/lib/share";
 
 /** Stand-in for server-side share-code storage (M6). Only one code exists in the shell. */
 const MOCK_SHARES: Record<string, unknown> = {
@@ -19,7 +20,9 @@ const MOCK_SHARES: Record<string, unknown> = {
   },
 };
 
-export function lookupMockShare(code: string): SharePayload | null {
+export function lookupMockShare(input: string): SharePayload | null {
+  const code = parseShareInput(input);
+  if (!code) return null;
   const raw = MOCK_SHARES[code];
   if (!raw) return null;
   const parsed = SharePayloadSchema.safeParse(raw);

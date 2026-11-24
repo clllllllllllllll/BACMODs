@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import BottomSheet from "@/components/ui/BottomSheet";
 import Button from "@/components/ui/Button";
 import SelectField from "@/components/ui/SelectField";
 import TextInput from "@/components/ui/TextInput";
 import { useToast } from "@/components/ui/Toast";
+import { OFFLINE_MESSAGE, useIsOnline } from "@/hooks/use-online";
 import { planActions, usePlanState } from "@/hooks/use-plan";
 import { lookupMockShare } from "@/lib/mock/shares";
-import type { Plan } from "@/lib/schemas/plan";
-import { parseShareInput } from "@/lib/share";
+import type { Plan, SharePayload } from "@/lib/schemas/plan";
 
 const INTAKES = [
   { value: "AY25", label: "AY25" },
@@ -20,7 +20,12 @@ const TERMS = [{ value: "Y1T2", label: "Y1T2 · Upcoming" }];
 
 const INVALID_CODE = "That code doesn't match a saved plan. Check it and try again.";
 
-type SetupFormProps = { submitLabel: string; large?: boolean; onDone: () => void };
+type SetupFormProps = {
+  submitLabel: string;
+  large?: boolean;
+  shareInput?: string | null;
+  onDone: (fromLink?: boolean) => void;
+};
 
 export function SetupPlaceholder() {
   return (
@@ -39,15 +44,32 @@ export function SetupPlaceholder() {
 export function SetupForm(props: SetupFormProps) {
   const { plan, loaded } = usePlanState();
   if (!loaded) return <SetupPlaceholder />;
-  return <SetupFields key={JSON.stringify([plan.programme, plan.intake, plan.term])} plan={plan} {...props} />;
+  const key = props.shareInput == null ? JSON.stringify([plan.programme, plan.intake, plan.term]) : `share:${props.shareInput}`;
+  return <SetupFields key={key} plan={plan} {...props} />;
 }
 
-function SetupFields({ plan, submitLabel, large, onDone }: SetupFormProps & { plan: Plan }) {
+function SetupFields({ plan, submitLabel, large, shareInput, onDone }: SetupFormProps & { plan: Plan }) {
   const toast = useToast();
+  const online = useIsOnline();
+  const codeId = useId();
   const [intake, setIntake] = useState(plan.intake);
   const [term, setTerm] = useState(plan.term);
-  const [code, setCode] = useState("");
-  const [codeError, setCodeError] = useState<string | undefined>();
+  const [code, setCode] = useState(shareInput ?? "");
+  const [linkedPlan] = useState(() => shareInput == null ? null : lookupMockShare(shareInput));
+  const [codeError, setCodeError] = useState(shareInput != null && !linkedPlan ? INVALID_CODE : undefined);
+  const importedLink = useRef(false);
+
+  const loadShared = useCallback((payload: SharePayload, fromLink: boolean) => {
+    planActions.loadShared(payload);
+    toast("Plan loaded from share code");
+    onDone(fromLink);
+  }, [onDone, toast]);
+
+  useEffect(() => {
+    if (!online || !linkedPlan || importedLink.current) return;
+    importedLink.current = true;
+    loadShared(linkedPlan, true);
+  }, [linkedPlan, loadShared, online]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,15 +79,13 @@ function SetupFields({ plan, submitLabel, large, onDone }: SetupFormProps & { pl
 
   function importCode(e: React.FormEvent) {
     e.preventDefault();
-    const parsed = parseShareInput(code);
-    const payload = parsed ? lookupMockShare(parsed) : null;
+    if (!online) return;
+    const payload = lookupMockShare(code);
     if (!payload) {
       setCodeError(INVALID_CODE);
       return;
     }
-    planActions.loadShared(payload);
-    toast("Plan loaded from share code");
-    onDone();
+    loadShared(payload, false);
   }
 
   return (
@@ -90,18 +110,26 @@ function SetupFields({ plan, submitLabel, large, onDone }: SetupFormProps & { pl
       </form>
       <form onSubmit={importCode} className="flex flex-col gap-3 border-t border-line pt-5">
         <TextInput
+          id={codeId}
           label="Share code"
           placeholder="BACMODS-XXXXX"
           autoComplete="off"
+          disabled={!online}
           value={code}
           onChange={(e) => {
             setCode(e.target.value);
             setCodeError(undefined);
           }}
-          error={codeError}
-          helper="Paste a code or link from a friend to load their plan."
+          error={online ? codeError : undefined}
+          helper={online ? "Paste a code or link from a friend to load their plan." : OFFLINE_MESSAGE}
         />
-        <Button type="submit" variant="secondary" fullWidth disabled={code.trim() === ""}>
+        <Button
+          type="submit"
+          variant="secondary"
+          fullWidth
+          disabled={!online || code.trim() === ""}
+          aria-describedby={online ? undefined : `${codeId}-note`}
+        >
           Load plan
         </Button>
       </form>
