@@ -9,8 +9,12 @@ export default defineConfig({
   reporter: [["list"]],
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000",
-    // Mobile first: 390 px is the design width (design.md §4).
-    viewport: { width: 390, height: 844 },
     trace: "retain-on-failure",
   },
+  projects: [
+    // Mobile first: 390 px is the design width (design.md §4).
+    { name: "mobile-390", use: { viewport: { width: 390, height: 844 } } },
+    { name: "tablet-768", use: { viewport: { width: 768, height: 1024 } } },
+    { name: "desktop-1440", use: { viewport: { width: 1440, height: 900 } } },
+  ],
 });

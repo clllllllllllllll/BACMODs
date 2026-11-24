@@ -1,8 +1,9 @@
 import { expect, test } from "@playwright/test";
 
-// Walks the S1 shell at 390 px: setup → modules → timetable → export.
+// Walks the S1 shell at 390, 768 and 1440 px (see playwright.config.ts projects): setup → modules → timetable → export.
 // Mock data only. Run against the Docker container: `docker compose up --build -d`.
 test("setup → modules → timetable → export", async ({ page }) => {
+  const desktop = (page.viewportSize()?.width ?? 0) >= 1024;
   // Setup
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Plan your BAC timetable" })).toBeVisible();
@@ -14,11 +15,27 @@ test("setup → modules → timetable → export", async ({ page }) => {
   await expect(page.getByRole("link", { name: "Modules" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("No optional modules in Y1T2.")).toBeVisible();
 
+  // Tabs: in the Header row on desktop, a second row below it otherwise.
+  const headerTabs = page.locator("header").getByRole("link", { name: "Modules" });
+  if (desktop) await expect(headerTabs).toBeVisible();
+  else await expect(headerTabs).toBeHidden();
+
   // Pick a different lab section for INF1107
   await page.getByRole("button", { name: /Laboratory · pick one/ }).click();
   // The radio is visually hidden; a student taps its label.
   await page.locator("label", { hasText: "P2" }).click();
   await expect(page.getByRole("radio", { name: /P2/ })).toBeChecked();
+
+  if (desktop) {
+    // Two columns: the live week preview sits to the right of the cards and shows the pick.
+    const preview = page.getByRole("complementary", { name: "Week preview" });
+    await expect(preview.getByRole("img", { name: /INF1107 LAB P2/ })).toBeVisible();
+    const card = await page.getByRole("region", { name: "INF1107" }).boundingBox();
+    const aside = await preview.boundingBox();
+    expect(aside!.x).toBeGreaterThan(card!.x + card!.width);
+  } else {
+    await expect(page.getByRole("complementary", { name: "Week preview" })).toBeHidden();
+  }
 
   // Add a module that clashes with INF1107's lecture
   await page.getByRole("button", { name: "Add BAC4000A" }).click();
@@ -27,7 +44,9 @@ test("setup → modules → timetable → export", async ({ page }) => {
   // Timetable: clash status, week view, week switching
   await page.getByRole("link", { name: "Timetable" }).click();
   await expect(page).toHaveURL(/\/timetable$/);
-  await expect(page.getByText(/Clash: 1 overlap/)).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: /Clash: 1 overlap/ })).toBeVisible();
+  // Week is the default view on desktop.
+  if (desktop) await expect(page.getByRole("group", { name: "Week timetable" })).toBeVisible();
   await page.getByRole("button", { name: "Week", exact: true }).click();
   await expect(page.getByRole("group", { name: "Week timetable" })).toBeVisible();
   await page.getByRole("button", { name: "Next week" }).click();
