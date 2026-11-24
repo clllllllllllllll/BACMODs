@@ -10,7 +10,7 @@ const MOCK_SHARES: Record<string, unknown> = {
     added: ["INF2006"],
     selection: {
       INF1105: { LTR: "ALL", TUT: "T2" },
-      INF1107: { LEC: "ALL", LAB: "P3", QUIZ: "Q2" },
+      INF1107: { LEC: "ALL", LAB: "P2", QUIZ: "Q2" },
       INF2008: { LEC: "ALL", LAB: "ALL" },
       AAI1001: { LEC: "ALL", TUT: "ALL" },
       INF2006: { LEC: "ALL", LAB: "L1" },
