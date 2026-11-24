@@ -9,7 +9,8 @@ import { assignOverlapLanes } from "@/lib/timetable";
 
 const HOUR_HEIGHT = 40;
 const AXIS_WIDTH = 2.25; // rem
-const MIN_LANE_WIDTH = 4; // rem, leaves room for module codes at the Micro size
+const MIN_DAY_WIDTH = 4; // rem
+const MIN_CLASH_LANE_WIDTH = 4.25; // rem, including the clash border around Micro labels
 
 /** Mon–Fri grid (plus Sat when the plan needs it) with a block per session. */
 export default function WeekView({
@@ -33,7 +34,8 @@ export default function WeekView({
   const columns = days.map((day) => {
     const indexes = items.map((_, i) => i).filter((i) => items[i].session.day === day);
     const placements = assignOverlapLanes(indexes.map((i) => items[i].session));
-    const minWidth = Math.max(1, ...placements.map(({ lanes }) => lanes)) * MIN_LANE_WIDTH;
+    const lanes = Math.max(1, ...placements.map((placement) => placement.lanes));
+    const minWidth = lanes === 1 ? MIN_DAY_WIDTH : lanes * MIN_CLASH_LANE_WIDTH;
     return { day, indexes, placements, minWidth };
   });
   const minWidth = `calc(${AXIS_WIDTH + columns.reduce((width, column) => width + column.minWidth, 0)}rem + 2px)`;

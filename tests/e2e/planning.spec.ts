@@ -1,0 +1,221 @@
+import { expect, test, type Locator } from "@playwright/test";
+
+const unavailable = "Curriculum for AY25 · Y1T2 is unavailable. You can still add modules below.";
+const invalidCode = "That code doesn't match a saved plan. Check it and try again.";
+const offline = "You're offline. Showing saved timetable";
+
+test("legacy plans migrate and switching intakes restores each plan", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("bacmods:plan:v1", JSON.stringify({
+      programme: "BAC", intake: "AY25", term: "Y1T2", added: ["INF2006"],
+      selection: { INF2006: { LEC: "ALL", LAB: "L2" } }, colors: { INF2006: "teal" }, view: "week", week: 4,
+    }));
+  });
+
+  await page.goto("/");
+  await expect(page.getByRole("combobox", { name: "Intake" })).toHaveValue("AY25");
+  await page.getByRole("button", { name: "Start planning" }).click();
+  const added = page.getByRole("region", { name: "INF2006" });
+  await expect(page.getByText(unavailable)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Optional", exact: true })).toBeHidden();
+  await expect(added.getByText("LAB L2")).toBeVisible();
+  await expect(added.getByRole("heading")).toHaveClass(/text-module-teal-text/);
+
+  const setup = page.getByRole("dialog", { name: "Your plan" });
+  await page.getByRole("button", { name: /Plan: BAC, AY25/ }).click();
+  await expect(setup.getByRole("combobox", { name: "Intake" })).toHaveValue("AY25");
+  await setup.getByRole("combobox", { name: "Intake" }).selectOption("AY26");
+  await setup.getByRole("button", { name: "Update plan" }).click();
+  await expect(page.getByText("No optional modules in Y1T2.")).toBeVisible();
+  await expect(added).toBeHidden();
+  const structures = page.getByRole("region", { name: "INF1107" });
+  await structures.getByRole("button", { name: /Laboratory · pick one/ }).click();
+  await structures.locator("label", { hasText: "P2" }).click();
+  await page.reload();
+  await expect(structures.getByText("LAB P2", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: /Plan: BAC, AY26/ }).click();
+  await setup.getByRole("combobox", { name: "Intake" }).selectOption("AY25");
+  await setup.getByRole("button", { name: "Update plan" }).click();
+  await expect(added.getByText("LAB L2")).toBeVisible();
+  await page.getByRole("link", { name: "Timetable" }).click();
+  await expect(page.getByRole("paragraph").getByText("Week 4", { exact: true })).toBeVisible();
+
+  await page.goto("/");
+  await expect(page.getByRole("combobox", { name: "Intake" })).toHaveValue("AY25");
+  await page.getByRole("combobox", { name: "Intake" }).selectOption("AY26");
+  await page.getByRole("button", { name: "Start planning" }).click();
+  await expect(structures.getByText("LAB P2", { exact: true })).toBeVisible();
+});
+
+test("search badges use the defaults applied by Add", async ({ page }) => {
+  await page.goto("/modules");
+  const structures = page.getByRole("region", { name: "INF1107" });
+  await structures.getByRole("button", { name: /Quiz · pick one/ }).click();
+  await structures.locator("label", { hasText: "Q2" }).click();
+  const candidate = page.getByRole("listitem").filter({ has: page.getByRole("button", { name: "Add INF2006" }) });
+  await expect(candidate.getByText("Addable", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Add INF2006" }).click();
+  await expect(page.getByRole("region", { name: "INF2006" }).getByText("LAB L1", { exact: true })).toBeVisible();
+  await expect(page.getByText("In plan", { exact: true })).toBeVisible();
+});
+
+test("a removed pick must be replaced even if only one section remains", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("bacmods:plan:v1", JSON.stringify({
+      programme: "BAC", intake: "AY26", term: "Y1T2", added: [],
+      selection: { INF1105: { LTR: "OLD", TUT: "T1" } }, colors: { INF1105: "blue" }, view: "auto", week: 1,
+    }));
+  });
+  await page.goto("/modules");
+  const programming = page.getByRole("region", { name: "INF1105" });
+  const removed = programming.getByRole("button", { name: /Section removed — pick again/ });
+  await expect(removed).toBeVisible();
+  await expect(programming.getByText("LTR ALL", { exact: true })).toBeHidden();
+  await removed.click();
+  await programming.locator("label", { hasText: "ALL" }).click();
+  await expect(removed).toBeHidden();
+  await expect(programming.getByText("LTR ALL", { exact: true })).toBeVisible();
+  await expect(programming.getByText("Fixed", { exact: true })).toBeVisible();
+});
+
+test("Auto-pick handles arrow keys only inside the menu", async ({ page }) => {
+  await page.goto("/modules");
+  const trigger = page.getByRole("button", { name: "Auto-pick" });
+  const menu = page.getByRole("menu", { name: "Auto-pick options" });
+  const first = menu.getByRole("menuitem", { name: "Fewest days on campus" });
+  await trigger.press("Enter");
+  await expect(first).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(menu.getByRole("menuitem", { name: /Start late/ })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(menu).toBeHidden();
+
+  await trigger.press("Enter");
+  await expect(first).toBeFocused();
+  const search = page.getByRole("searchbox", { name: "Search by code or name" });
+  await search.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(search).toBeFocused();
+  await expect(trigger).toHaveAttribute("aria-expanded", "false");
+
+  await trigger.press("Enter");
+  await expect(first).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(trigger).toBeFocused();
+  await expect(menu).toBeHidden();
+});
+
+test("direct share links load the same plan as a pasted code", async ({ page }) => {
+  await page.goto("/?share=%20bacmods-7kq2x%20");
+  await expect(page).toHaveURL(/\/modules$/);
+  await expect(page.getByRole("button", { name: "Remove INF2006" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "INF1107" }).getByText("LAB P2", { exact: true })).toBeVisible();
+});
+
+test("an unknown direct share link shows the field error and preserves the entered code", async ({ page }) => {
+  await page.goto("/?share=BACMODS-ZZZZZ");
+  const input = page.getByRole("textbox", { name: "Share code" });
+  await expect(input).toHaveValue("BACMODS-ZZZZZ");
+  await expect(input).toHaveAttribute("aria-invalid", "true");
+  await expect(input).toHaveAccessibleDescription(invalidCode);
+  await expect(page.getByRole("alert").filter({ hasText: invalidCode })).toBeVisible();
+});
+
+test("clipboard feedback stays visible and announced in the share dialog", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/export");
+  await page.getByRole("button", { name: /^Share code/ }).click();
+  const share = page.getByRole("dialog", { name: "Share your plan" });
+  const status = share.getByRole("status");
+  await expect(status).toHaveAttribute("aria-live", "polite");
+  await share.getByRole("button", { name: "Copy share code" }).click();
+  await expect(status).toHaveText("Share code copied");
+  await expect(status).toBeInViewport();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("BACMODS-7KQ2X");
+
+  await page.evaluate(() => {
+    navigator.clipboard.writeText = async () => { throw new Error("Clipboard unavailable"); };
+  });
+  await share.getByRole("button", { name: "Copy link" }).click();
+  await expect(status).toHaveText("Couldn't copy. Select the text and copy it yourself.");
+  await expect(status).toBeInViewport();
+});
+
+test("going offline explains and disables code sharing until the connection returns", async ({ page, context }) => {
+  await page.goto("/export");
+  await page.getByRole("button", { name: /^Share code/ }).click();
+  const share = page.getByRole("dialog", { name: "Share your plan" });
+  const copy = share.getByRole("button", { name: "Copy share code" });
+  await expect(copy).toBeEnabled();
+  await context.setOffline(true);
+  await expect(share.getByRole("status")).toHaveText(offline);
+  await expect(copy).toBeDisabled();
+  await expect(copy).toHaveAccessibleDescription(offline);
+  await context.setOffline(false);
+  await expect(copy).toBeEnabled();
+  await page.keyboard.press("Escape");
+  await expect(share).toBeHidden();
+
+  await page.getByRole("button", { name: /Plan: BAC, AY26/ }).click();
+  const setup = page.getByRole("dialog", { name: "Your plan" });
+  const input = setup.getByRole("textbox", { name: "Share code" });
+  const load = setup.getByRole("button", { name: "Load plan" });
+  await input.fill("BACMODS-7KQ2X");
+  await context.setOffline(true);
+  await expect(setup.getByRole("status")).toHaveText(offline);
+  await expect(input).toBeDisabled();
+  await expect(input).toHaveAccessibleDescription(offline);
+  await expect(load).toBeDisabled();
+  await expect(setup.getByRole("button", { name: "Update plan" })).toBeEnabled();
+  await context.setOffline(false);
+  await expect(input).toBeEnabled();
+  await expect(load).toBeEnabled();
+  await load.click();
+  await expect(setup).toBeHidden();
+  await expect(page.getByRole("listitem").filter({ hasText: "INF1107" }).getByText("LAB P2")).toBeVisible();
+});
+
+async function expectReadableLanes(grid: Locator, labels: string[]) {
+  await grid.scrollIntoViewIfNeeded();
+  const boxes = await Promise.all(labels.map(async (label) => {
+    const block = grid.getByRole("img", { name: new RegExp(`^${label},.*clash$`) });
+    await expect(block).toBeInViewport({ ratio: 1 });
+    const [code, ...section] = label.split(" ");
+    for (const text of [code, section.join(" ")]) {
+      const clipped = await block.getByText(text, { exact: true }).evaluate(
+        (node) => node.scrollWidth > node.clientWidth || node.scrollHeight > node.clientHeight,
+      );
+      expect(clipped, `${text} fits in its block`).toBe(false);
+    }
+    return (await block.boundingBox())!;
+  }));
+  boxes.sort((a, b) => a.x - b.x);
+  expect(Math.max(...boxes.map((b) => b.y))).toBeLessThan(Math.min(...boxes.map((b) => b.y + b.height)));
+  for (let i = 1; i < boxes.length; i++) {
+    expect(boxes[i - 1].x + boxes[i - 1].width).toBeLessThanOrEqual(boxes[i].x);
+  }
+}
+
+test("the desktop preview and timetable fit two and three concurrent class labels", async ({ page }) => {
+  test.skip((page.viewportSize()?.width ?? 0) < 1024, "The live week preview starts at 1024 px");
+  await page.goto("/modules");
+  await page.getByRole("button", { name: "Add BAC4000A" }).click();
+  const preview = page.getByRole("complementary", { name: "Week preview" });
+  const previewGrid = preview.getByRole("group", { name: "Week timetable" });
+  const pair = ["INF1107 LEC ALL", "BAC4000A WKS W1"];
+  await expectReadableLanes(previewGrid, pair);
+
+  const programming = page.getByRole("region", { name: "INF1105" });
+  await programming.getByRole("button", { name: /Tutorial · pick one/ }).click();
+  await programming.locator("label", { hasText: "T3" }).click();
+  await preview.getByRole("button", { name: "Next week" }).click();
+  const trio = [...pair, "INF1105 TUT T3"];
+  await expectReadableLanes(previewGrid, trio);
+
+  await page.getByRole("link", { name: "Timetable" }).click();
+  const timetable = page.getByRole("group", { name: "Week timetable" });
+  await expectReadableLanes(timetable, trio);
+  await page.getByRole("button", { name: "Previous week" }).click();
+  await expectReadableLanes(timetable, pair);
+});

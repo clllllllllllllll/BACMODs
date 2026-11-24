@@ -15,6 +15,10 @@ test("setup → modules → timetable → export", async ({ page }) => {
   // Setup
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Plan your BAC timetable" })).toBeVisible();
+  await expect(page.getByText(
+    "Unofficial planning tool. Check the registration system before you register. Sample data · version mock-1",
+    { exact: true },
+  )).toBeVisible();
   await page.getByRole("button", { name: "Start planning" }).click();
 
   // Modules
@@ -57,6 +61,7 @@ test("setup → modules → timetable → export", async ({ page }) => {
   if (desktop) await expect(page.getByRole("group", { name: "Week timetable" })).toBeVisible();
   await page.getByRole("button", { name: "Week", exact: true }).click();
   await expect(page.getByRole("group", { name: "Week timetable" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(page.viewportSize()?.width);
   await page.getByRole("button", { name: "Next week" }).click();
   await expect(page.getByText("Week 2")).toBeVisible();
 
