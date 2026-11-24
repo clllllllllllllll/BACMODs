@@ -120,7 +120,11 @@ Each milestone ends with something that runs. **S1 (frontend shell) runs in para
 on mock data, so the UI isn't waiting on the real APA file.
 
 ### S1 — Frontend shell (start now, mock data)
-- [x] Install Node.js LTS and `npm install` (Node isn't on this machine yet)
+- [x] Install Node.js LTS and `npm install`
+- [ ] Run in Docker until Vercel details are available: multi-stage `Dockerfile` building Next.js with
+  `output: "standalone"`, `.dockerignore` (excludes `node_modules`, `.next`, `.env*`, data files),
+  and `compose.yaml` serving on `localhost:3000`. `output: "standalone"` doesn't affect a later
+  Vercel deploy.
 - [x] Tokens from `design.md` into Tailwind `@theme`: colours, type scale, radii, shadows; Inter via
   `next/font`
 - [x] UI primitives: `Button`, `Chip`, `SelectField`, `TextInput`, `Banner`, `Toast`, status badge,
@@ -128,9 +132,11 @@ on mock data, so the UI isn't waiting on the real APA file.
 - [x] Layout: `Header` + `ContextPill` (BAC · AY26 · Y1T2), `TabBar` (Timetable → Modules → Export)
 - [x] All four screens rendered from a typed mock dataset matching the prototype (INF1105, INF1107,
   INF2008, AAI1001, INF2006, BAC4000A)
-- [x] Mobile-first: content column max 390–480 px, centred on wider screens; desktop layout later
-- [x] Playwright smoke test at 390 px: setup → modules → timetable → export
-- **Done when:** the deployed shell on Vercel clicks through like the Figma prototype, with tokens and states as specified in `design.md`.
+- [x] Mobile, tablet and desktop layouts follow `design.md` §4
+- [ ] Playwright smoke test at 390 px: setup → modules → timetable → export, run against the
+  Docker container
+- **Done when:** `docker compose up --build` serves a shell that clicks through like the Figma prototype,
+  with tokens and states as specified in `design.md`. Deploying to Vercel moves to M7.
 
 ### M0 — Get the real inputs (start now, blocks M1)
 - [ ] One real APA Excel file to study column names, lesson-type values, week formats (kept out of git)
