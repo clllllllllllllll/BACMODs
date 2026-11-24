@@ -1,4 +1,4 @@
-node_modules
+**/node_modules
 .next
 .git
 .github
@@ -11,11 +11,13 @@ compose.yaml
 npm-debug.log*
 
 # Secrets and real data never go into an image (see docs/AGENT_GUIDE.md §3)
-.env*
+**/.env*
 !.env.example
-data
-*.xlsx
-*.csv
+**/data
+**/importer/out
+**/*.xlsx
+**/*.xls
+**/*.csv
 supabase/.temp
 test-results
 playwright-report
