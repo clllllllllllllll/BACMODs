@@ -135,7 +135,7 @@ on mock data, so the UI isn't waiting on the real APA file.
 - [ ] Mobile-first: content column max 390–480 px, centred on wider screens; desktop layout later
 - [ ] Playwright smoke test at 390 px: setup → modules → timetable → export, run against the
   Docker container
-- **Done when:** `docker compose up` serves a shell that clicks through like the Figma prototype,
+- **Done when:** `docker compose up --build` serves a shell that clicks through like the Figma prototype,
   with tokens and states as specified in `design.md`. Deploying to Vercel moves to M7.
 
 ### M0 — Get the real inputs (start now, blocks M1)
