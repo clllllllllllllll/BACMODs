@@ -1,6 +1,6 @@
 # BACMODS — Project Plan
 
-_Last updated: 2026-11-24_
+_Last updated: 2026-11-25_
 
 ## 1. What we're building
 
@@ -57,7 +57,7 @@ Notes and decisions:
 | Schema / validation | Zod | One schema shared by importer (validate before insert), server (parse the jsonb) and client (parse share payloads) |
 | Importer | exceljs | Reads the APA `.xlsx` |
 | Data / hosting | Supabase (cloud) + Vercel | |
-| Tests | Vitest (logic), Playwright (key flows on a 390 px viewport) | |
+| Tests | Vitest (logic), Playwright (key flows at 390, 768, 1024 and 1440 px) | |
 | Design | `design.md` | Single source of truth. Figma is a visual reference for layout and flows, not kept in sync |
 
 ## 4. Architecture
@@ -121,10 +121,9 @@ on mock data, so the UI isn't waiting on the real APA file.
 
 ### S1 — Frontend shell (start now, mock data)
 - [x] Install Node.js LTS and `npm install`
-- [ ] Run in Docker until Vercel details are available: multi-stage `Dockerfile` building Next.js with
-  `output: "standalone"`, `.dockerignore` (excludes `node_modules`, `.next`, `.env*`, data files),
-  and `compose.yaml` serving on `localhost:3000`. `output: "standalone"` doesn't affect a later
-  Vercel deploy.
+- [x] Run in Docker with a multi-stage `Dockerfile` building Next.js with `output: "standalone"`
+  and `compose.yaml` serving on `localhost:3000`. `.dockerignore` excludes dependency and build
+  output, private environment files, data files and importer output from the build context.
 - [x] Tokens from `design.md` into Tailwind `@theme`: colours, type scale, radii, shadows; Inter via
   `next/font`
 - [x] UI primitives: `Button`, `Chip`, `SelectField`, `TextInput`, `Banner`, `Toast`, status badge,
@@ -133,8 +132,8 @@ on mock data, so the UI isn't waiting on the real APA file.
 - [x] All four screens rendered from a typed mock dataset matching the prototype (INF1105, INF1107,
   INF2008, AAI1001, INF2006, BAC4000A)
 - [x] Mobile, tablet and desktop layouts follow `design.md` §4
-- [ ] Playwright smoke test at 390 px: setup → modules → timetable → export, run against the
-  Docker container
+- [x] Playwright smoke and regression tests at 390, 768, 1024 and 1440 px against the Docker image
+  built from the checked-out commit. The smoke flow covers setup → modules → timetable → export.
 - **Done when:** `docker compose up --build` serves a shell that clicks through like the Figma prototype,
   with tokens and states as specified in `design.md`. Deploying to Vercel moves to M7.
 
@@ -215,7 +214,8 @@ on mock data, so the UI isn't waiting on the real APA file.
 
 - Unit tests (Vitest) for: xlsx parsing, code normalisation, join report, clash detection, auto-pick,
   .ics generation, share-code parsing. These are where bugs would hurt students.
-- Playwright for the main flows at 390 px, plus an automated accessibility check (axe).
+- Playwright for the main flows at phone, tablet and desktop widths. An automated accessibility
+  check (axe) is planned.
 - Zod schemas are the contract: importer output, stored jsonb and share payloads all go through them.
 - Only synthetic fixtures in the repo.
 - Manual check of the real import before each publish.
