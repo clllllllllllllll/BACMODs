@@ -1,3 +1,10 @@
+import AppFrame from "@/components/layout/AppFrame";
+import ExportScreen from "@/components/export/ExportScreen";
+
 export default function ExportPage() {
-  return <h1>Export</h1>;
+  return (
+    <AppFrame>
+      <ExportScreen />
+    </AppFrame>
+  );
 }

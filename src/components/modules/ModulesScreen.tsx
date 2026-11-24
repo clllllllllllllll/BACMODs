@@ -1,0 +1,80 @@
+"use client";
+
+import AddModuleSearch from "@/components/modules/AddModuleSearch";
+import AutoPickMenu from "@/components/modules/AutoPickMenu";
+import ModuleCard from "@/components/modules/ModuleCard";
+import Banner from "@/components/ui/Banner";
+import { usePlan } from "@/hooks/use-plan";
+import { MOCK_DATASET } from "@/lib/mock/dataset";
+import { curriculumCodes, summarise } from "@/lib/plan";
+
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-label uppercase text-fg-secondary">{title}</h2>
+      {children}
+    </section>
+  );
+}
+
+function Stat({ label, value, alert }: { label: string; value: string; alert?: boolean }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <dt className="text-caption text-fg-secondary">{label}</dt>
+      <dd className={`text-title ${alert ? "text-danger-text" : "text-fg"}`}>{value}</dd>
+    </div>
+  );
+}
+
+export default function ModulesScreen() {
+  const plan = usePlan();
+  const dataset = MOCK_DATASET;
+  const groups = curriculumCodes(plan, dataset);
+  const summary = summarise(plan, dataset);
+  const added = plan.added.filter((c) => c in dataset.modules);
+  const card = (code: string, removable = false) => (
+    <ModuleCard key={code} module={dataset.modules[code]} plan={plan} dataset={dataset} removable={removable} />
+  );
+
+  return (
+    <>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-heading">Modules</h1>
+        <AutoPickMenu />
+      </div>
+
+      <Banner variant="info">Showing sample timetable data. Real timetables arrive in a later update.</Banner>
+
+      <dl className="grid grid-cols-4 gap-2 rounded-control border border-line bg-card px-4 py-3">
+        <Stat label="Credits" value={String(summary.credits)} />
+        <Stat label="Days on campus" value={String(summary.daysOnCampus)} />
+        <Stat label="Earliest start" value={summary.earliestStart ?? "–"} />
+        <Stat
+          label="Clashes"
+          value={summary.clashes === 0 ? "None" : String(summary.clashes)}
+          alert={summary.clashes > 0}
+        />
+      </dl>
+
+      {groups.choice.length > 0 ? <Group title="Mandatory · with choice">{groups.choice.map((c) => card(c))}</Group> : null}
+      {groups.fixed.length > 0 ? <Group title="Mandatory · no choice">{groups.fixed.map((c) => card(c))}</Group> : null}
+      <Group title="Optional">
+        {groups.optional.length > 0 ? (
+          groups.optional.map((c) => card(c))
+        ) : (
+          <p className="rounded-control border border-dashed border-line bg-card px-4 py-4 text-body text-fg-secondary">
+            No optional modules in {plan.term}.
+          </p>
+        )}
+      </Group>
+      {added.length > 0 ? <Group title="Not on your list">{added.map((c) => card(c, true))}</Group> : null}
+
+      <AddModuleSearch plan={plan} dataset={dataset} />
+
+      <p className="text-small text-fg-secondary">
+        Unofficial planning tool. Check the registration system before you register. Sample data · version{" "}
+        {dataset.version}.
+      </p>
+    </>
+  );
+}

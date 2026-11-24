@@ -101,9 +101,9 @@ export function chosenSection(plan: Plan, module: Module, lessonType: string): S
 export function plannedSessions(plan: Plan, dataset: TermDataset): PlannedSession[] {
   const out: PlannedSession[] = [];
   for (const code of planCodes(plan, dataset)) {
-    const module = dataset.modules[code];
-    for (const lessonType of lessonTypesOf(module)) {
-      const section = chosenSection(plan, module, lessonType);
+    const mod = dataset.modules[code];
+    for (const lessonType of lessonTypesOf(mod)) {
+      const section = chosenSection(plan, mod, lessonType);
       if (!section) continue;
       for (const session of section.sessions) {
         out.push({
@@ -169,9 +169,9 @@ export function summarise(plan: Plan, dataset: TermDataset): PlanSummary {
 /** One line per module: "INF1107 LEC ALL · LAB P3 · QUIZ Q1". */
 export function sectionListLines(plan: Plan, dataset: TermDataset): { code: string; line: string }[] {
   return planCodes(plan, dataset).map((code) => {
-    const module = dataset.modules[code];
-    const parts = lessonTypesOf(module)
-      .map((t) => chosenSection(plan, module, t))
+    const mod = dataset.modules[code];
+    const parts = lessonTypesOf(mod)
+      .map((t) => chosenSection(plan, mod, t))
       .filter((s): s is Section => Boolean(s))
       .map((s) => `${s.lessonType} ${s.id}`);
     return { code, line: `${code} ${parts.join(" · ")}` };

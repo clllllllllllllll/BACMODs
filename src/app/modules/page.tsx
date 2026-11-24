@@ -1,3 +1,10 @@
+import AppFrame from "@/components/layout/AppFrame";
+import ModulesScreen from "@/components/modules/ModulesScreen";
+
 export default function ModulesPage() {
-  return <h1>Modules</h1>;
+  return (
+    <AppFrame>
+      <ModulesScreen />
+    </AppFrame>
+  );
 }
