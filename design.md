@@ -4,7 +4,9 @@
 
 BACMODS uses a compact, light interface for comparing modules, class sections and times. On the Modules screen, the module code and credit count lead each card. The full name, meeting time and venue sit below in smaller, quieter text. On the Timetable screen, a module keeps its color as it moves between a chip, a day event and a week block. Blue identifies actions and the active navigation tab. Thin dividers keep dense lists readable.
 
-The source covers four flows: Start & setup, Modules, Timetable and Export. All screen frames are 390 px wide. Values below come from local styles and component and screen layers. Desktop and hover guidance is marked as a recommendation. [Mobile prototype](https://www.figma.com/proto/9TL0oku3XrjJV9QHju3fzg/BACMODS-%E2%80%93-High-fidelity?node-id=19-984) · [Design file](https://www.figma.com/design/9TL0oku3XrjJV9QHju3fzg/BACMODS-%E2%80%93-High-fidelity?node-id=1-5)
+> **This file is the single source of truth for the BACMODS design.** Where it differs from the Figma file, this file wins. Figma is a visual reference for layout and flows only, and is not kept in sync. Change the design by changing this file.
+
+The Figma file covers four flows: Start & setup, Modules, Timetable and Export. All screen frames are 390 px wide. Values below were taken from its local styles and component and screen layers, then corrected and extended here. Desktop and hover guidance is marked as a recommendation. [Mobile prototype](https://www.figma.com/proto/9TL0oku3XrjJV9QHju3fzg/BACMODS-%E2%80%93-High-fidelity?node-id=19-984) · [Design file](https://www.figma.com/design/9TL0oku3XrjJV9QHju3fzg/BACMODS-%E2%80%93-High-fidelity?node-id=1-5)
 
 ## 2. Color
 
@@ -34,7 +36,7 @@ Scrims use `#111827` at 12% or 40% over the underlying screen.
 
 ### Text on tinted fills
 
-Several accents are too light to read as small text on their own pale tint (WCAG AA needs 4.5:1; the timetable uses 10–12 px text). Add these **text tokens** and use them wherever an accent colour is used for text on its tint or on white. Keep the original accent for dots, left borders, outlines and icons. These tokens are not in Figma yet; add them as paint styles there so the file and the code match.
+Several accents are too light to read as small text on their own pale tint (WCAG AA needs 4.5:1; the timetable uses 10–12 px text). Add these **text tokens** and use them wherever an accent colour is used for text on its tint or on white. Keep the original accent for dots, left borders, outlines and icons. These tokens exist only in this file, not in Figma.
 
 | New token | Hex | Replaces as text colour | Contrast on its tint |
 | --- | --- | --- | ---: |
@@ -51,7 +53,7 @@ Purple (5.0:1), pink (5.1:1), slate (6.9:1), primary (6.0:1) and warning (4.5:1)
 
 ### Banner variants
 
-In Figma the `Banner` Success variant uses the blue primary pair, while the Fits badge uses green. Treat this as a Figma inconsistency: implement Banner **Success** with the success pair, and add an **Info** variant with the primary pair for neutral notices such as "A new timetable version was published". Update the Figma component to match.
+Banner **Success** uses the success pair, and an **Info** variant uses the primary pair for neutral notices such as "A new timetable version was published". (Figma's Banner Success is blue; that is outdated.)
 
 ### Module colour assignment
 
@@ -136,7 +138,7 @@ The Components page contains **42 named components and component sets**, countin
 | Selected and fixed | The active navigation tab uses blue text and an underline. Class row distinguishes Fixed, Choice and Choice open. Preserve the lock for fixed classes and the chevron for choices. |
 | Schedule clash | Section option has a Clash variant, Search result has Addable, Clash and In plan, and Clash status has OK and Clash. Keep the status text visible alongside its color so the user can distinguish a conflict from a module’s own red-adjacent accent. |
 
-The following states are not drawn in Figma. Until they are, build them from existing components as described.
+The following states are not drawn in Figma. Build them from existing components as described.
 
 | State | Treatment |
 | --- | --- |

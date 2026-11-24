@@ -58,7 +58,7 @@ Notes and decisions:
 | Importer | exceljs | Reads the APA `.xlsx` |
 | Data / hosting | Supabase (cloud) + Vercel | |
 | Tests | Vitest (logic), Playwright (key flows on a 390 px viewport) | |
-| Design | Figma → `design.md` | |
+| Design | `design.md` | Single source of truth. Figma is a visual reference for layout and flows, not kept in sync |
 
 ## 4. Architecture
 
@@ -130,7 +130,7 @@ on mock data, so the UI isn't waiting on the real APA file.
   INF2008, AAI1001, INF2006, BAC4000A)
 - [ ] Mobile-first: content column max 390–480 px, centred on wider screens; desktop layout later
 - [ ] Playwright smoke test at 390 px: setup → modules → timetable → export
-- **Done when:** the deployed shell on Vercel clicks through like the Figma prototype.
+- **Done when:** the deployed shell on Vercel clicks through like the Figma prototype, with tokens and states as specified in `design.md`.
 
 ### M0 — Get the real inputs (start now, blocks M1)
 - [ ] One real APA Excel file to study column names, lesson-type values, week formats (kept out of git)

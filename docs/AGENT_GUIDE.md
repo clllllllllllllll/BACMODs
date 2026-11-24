@@ -18,7 +18,7 @@ Sources of truth. Read the one that covers your task:
 | Colours, type, spacing, components, states, copy | [`design.md`](../design.md) |
 | Database schema | `supabase/migrations/` |
 | Data shapes (once added) | Zod schemas in `src/lib/schemas/` |
-| Figma | [Design file](https://www.figma.com/design/9TL0oku3XrjJV9QHju3fzg/BACMODS-%E2%80%93-High-fidelity?node-id=1-5) · [Prototype](https://www.figma.com/proto/9TL0oku3XrjJV9QHju3fzg/BACMODS-%E2%80%93-High-fidelity?node-id=19-984) |
+| Figma (visual reference only; `design.md` wins where they differ) | [Design file](https://www.figma.com/design/9TL0oku3XrjJV9QHju3fzg/BACMODS-%E2%80%93-High-fidelity?node-id=1-5) · [Prototype](https://www.figma.com/proto/9TL0oku3XrjJV9QHju3fzg/BACMODS-%E2%80%93-High-fidelity?node-id=19-984) |
 
 If your change makes one of these wrong, update it in the same change and say so. Never change
 `design.md` or `docs/PLAN.md` silently.
