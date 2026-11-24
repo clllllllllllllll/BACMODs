@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import Button from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
 import { useToast } from "@/components/ui/Toast";
@@ -19,39 +19,49 @@ export default function AutoPickMenu() {
   const toast = useToast();
   const menuId = useId();
   const root = useRef<HTMLDivElement>(null);
+  const menu = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    const items = () => Array.from(root.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
-    items()[0]?.focus();
-    const close = (refocus: boolean) => {
-      setOpen(false);
-      if (refocus) trigger.current?.focus();
-    };
+    menu.current?.querySelector<HTMLButtonElement>('[role="menuitem"]')?.focus();
     const onPointer = (e: PointerEvent) => {
-      if (!root.current?.contains(e.target as Node)) close(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close(true);
-      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-        e.preventDefault();
-        const list = items();
-        const i = list.indexOf(document.activeElement as HTMLButtonElement);
-        const next = e.key === "ArrowDown" ? (i + 1) % list.length : (i - 1 + list.length) % list.length;
-        list[next]?.focus();
-      }
+      if (!root.current?.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("pointerdown", onPointer);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onPointer);
-      document.removeEventListener("keydown", onKey);
-    };
+    return () => document.removeEventListener("pointerdown", onPointer);
   }, [open]);
 
+  function closeAndFocusTrigger() {
+    setOpen(false);
+    trigger.current?.focus();
+  }
+
+  function handleKey(event: KeyboardEvent<HTMLDivElement>) {
+    if (!open) return;
+    if (event.key === "Escape" || (event.key === "Tab" && event.shiftKey && event.target !== trigger.current)) {
+      event.preventDefault();
+      closeAndFocusTrigger();
+      return;
+    }
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    const items = Array.from(menu.current?.querySelectorAll<HTMLButtonElement>('[role="menuitem"]') ?? []);
+    const focused = items.findIndex((item) => item === event.target);
+    const direction = event.key === "ArrowDown" ? 1 : -1;
+    const next = focused === -1 ? (direction === 1 ? 0 : items.length - 1) : (focused + direction + items.length) % items.length;
+    event.preventDefault();
+    items[next]?.focus();
+  }
+
   return (
-    <div ref={root} className="relative">
+    <div
+      ref={root}
+      className="relative"
+      onKeyDown={handleKey}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+      }}
+    >
       <Button
         ref={trigger}
         variant="secondary"
@@ -65,6 +75,7 @@ export default function AutoPickMenu() {
       </Button>
       {open ? (
         <div
+          ref={menu}
           id={menuId}
           role="menu"
           aria-label="Auto-pick options"
@@ -75,9 +86,9 @@ export default function AutoPickMenu() {
               key={option}
               type="button"
               role="menuitem"
+              tabIndex={-1}
               onClick={() => {
-                setOpen(false);
-                trigger.current?.focus();
+                closeAndFocusTrigger();
                 toast("Auto-pick is coming soon. Your sections were not changed.");
               }}
               className="focus-ring block w-full px-3 py-2 text-left text-body text-fg hover:bg-page"
