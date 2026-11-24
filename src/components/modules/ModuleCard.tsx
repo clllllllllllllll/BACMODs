@@ -21,6 +21,7 @@ export default function ModuleCard({
   removable?: boolean;
 }) {
   const style = MODULE_STYLES[plan.colors[module.code] ?? "slate"];
+  const lessonTypes = new Set([...lessonTypesOf(module), ...Object.keys(plan.selection[module.code] ?? {})]);
   return (
     <section
       aria-labelledby={`mod-${module.code}`}
@@ -48,7 +49,7 @@ export default function ModuleCard({
         </div>
       </header>
       <ul className="divide-y divide-line border-t border-line">
-        {lessonTypesOf(module).map((type) => (
+        {[...lessonTypes].map((type) => (
           <ClassRow key={type} module={module} lessonType={type} plan={plan} dataset={dataset} />
         ))}
       </ul>

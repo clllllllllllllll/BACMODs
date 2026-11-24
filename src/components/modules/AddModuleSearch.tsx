@@ -5,7 +5,7 @@ import Button from "@/components/ui/Button";
 import StatusBadge from "@/components/ui/StatusBadge";
 import TextInput from "@/components/ui/TextInput";
 import { planActions } from "@/hooks/use-plan";
-import { clashesWithPlan, curriculumCodes, normalizeModuleCode } from "@/lib/plan";
+import { curriculumCodes, defaultSectionsClash, normalizeModuleCode } from "@/lib/plan";
 import type { TermDataset } from "@/lib/schemas/dataset";
 import type { Plan } from "@/lib/schemas/plan";
 
@@ -39,7 +39,7 @@ export default function AddModuleSearch({ plan, dataset }: { plan: Plan; dataset
         ) : (
           results.map((m) => {
             const inPlan = added.has(m.code);
-            const clash = !inPlan && clashesWithPlan(m.sections.flatMap((s) => s.sessions), plan, dataset, { moduleCode: m.code });
+            const clash = !inPlan && defaultSectionsClash(m, plan, dataset);
             return (
               <li key={m.code} className="flex items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">

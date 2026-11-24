@@ -7,7 +7,7 @@ import Icon from "@/components/ui/Icon";
 import { planActions } from "@/hooks/use-plan";
 import { lessonTypeName, shortLabel } from "@/lib/class-types";
 import { sectionLines } from "@/lib/format";
-import { chosenSection, clashesWithPlan, isFixed, sectionsOfType } from "@/lib/plan";
+import { clashesWithPlan, resolveSection, sectionsOfType } from "@/lib/plan";
 import type { Module, TermDataset } from "@/lib/schemas/dataset";
 import type { Plan } from "@/lib/schemas/plan";
 
@@ -27,14 +27,16 @@ export default function ClassRow({
   const listId = useId();
   const color = plan.colors[module.code] ?? "slate";
   const teachingWeeks = dataset.calendar.teachingWeeks;
-  const fixed = isFixed(module, lessonType);
-  const chosen = chosenSection(plan, module, lessonType);
+  const { status, section: chosen } = resolveSection(plan, module, lessonType);
+  const options = sectionsOfType(module, lessonType);
+  const editable = status !== "fixed" && options.length > 0;
   const name = lessonTypeName(lessonType);
+  const warning = status === "removed" ? "bg-warning-50" : "";
 
   const summary = (
     <span className="flex min-w-0 flex-1 flex-col gap-0.5 text-left">
       <span className="flex items-center gap-2">
-        <span className="text-body-medium text-fg">{fixed ? name : `${name} · pick one`}</span>
+        <span className="text-body-medium text-fg">{editable ? `${name} · pick one` : name}</span>
         {chosen ? <Chip color={color}>{shortLabel(lessonType, chosen.id)}</Chip> : null}
       </span>
       {chosen ? (
@@ -43,27 +45,29 @@ export default function ClassRow({
             {line}
           </span>
         ))
-      ) : (
+      ) : status === "removed" ? (
         // The saved section no longer exists in this dataset version (design.md §7).
         <span className="text-small-medium text-warning">Section removed — pick again</span>
-      )}
+      ) : null}
     </span>
   );
 
-  if (fixed) {
+  if (!editable) {
     return (
-      <li className="flex items-start gap-3 px-4 py-3">
+      <li className={`flex items-start gap-3 px-4 py-3 ${warning}`}>
         {summary}
-        <span className="mt-0.5 inline-flex items-center gap-1 text-small text-fg-secondary">
-          <Icon name="lock" size={14} />
-          <span>Fixed</span>
-        </span>
+        {status === "fixed" ? (
+          <span className="mt-0.5 inline-flex items-center gap-1 text-small text-fg-secondary">
+            <Icon name="lock" size={14} />
+            <span>Fixed</span>
+          </span>
+        ) : null}
       </li>
     );
   }
 
   return (
-    <li className={chosen ? "" : "bg-warning-50"}>
+    <li className={warning}>
       <button
         type="button"
         aria-expanded={open}
@@ -77,7 +81,7 @@ export default function ClassRow({
       </button>
       {open ? (
         <div id={listId} role="group" aria-label={`${name} sections for ${module.code}`} className="flex flex-col gap-2 px-4 pb-3">
-          {sectionsOfType(module, lessonType).map((section) => (
+          {options.map((section) => (
             <SectionOption
               key={section.id}
               name={`${module.code}-${lessonType}`}

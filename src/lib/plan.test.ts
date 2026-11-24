@@ -3,10 +3,13 @@ import { MOCK_DATASET } from "@/lib/mock/dataset";
 import {
   clashesWithPlan,
   curriculumCodes,
+  defaultSectionsClash,
+  defaultSelectionFor,
   makeInitialPlan,
   nextColor,
   planClashes,
   planCodes,
+  resolveSection,
   sectionListLines,
   summarise,
 } from "@/lib/plan";
@@ -59,6 +62,44 @@ describe("plan", () => {
   it("flags the capstone seminar as clashing with the data structures lecture", () => {
     const p = plan();
     expect(clashesWithPlan(MOCK_DATASET.modules.BAC4000A.sections[0].sessions, p, MOCK_DATASET, { moduleCode: "BAC4000A" })).toBe(true);
+  });
+  it("checks only the sections that adding a search result would pick", () => {
+    const p = plan();
+    p.selection.INF1107.QUIZ = "Q2";
+    const mod = MOCK_DATASET.modules.INF2006;
+    const alternative = mod.sections.find((section) => section.id === "L2")!;
+    expect(clashesWithPlan(alternative.sessions, p, MOCK_DATASET, { moduleCode: mod.code })).toBe(true);
+    expect(defaultSelectionFor(mod).LAB).toBe("L1");
+    expect(defaultSectionsClash(mod, p, MOCK_DATASET)).toBe(false);
+    expect(defaultSectionsClash(MOCK_DATASET.modules.BAC4000A, p, MOCK_DATASET)).toBe(true);
+  });
+  it("flags overlaps between a result's own default sections", () => {
+    const mod = MOCK_DATASET.modules.INF2006;
+    const sessions = mod.sections[0].sessions;
+    const overlapping = { ...mod, sections: [mod.sections[0], { id: "L1", lessonType: "LAB", sessions }] };
+    expect(defaultSectionsClash(overlapping, plan(), MOCK_DATASET)).toBe(true);
+  });
+  it("keeps a removed pick unresolved when its replacement is the only remaining option", () => {
+    const p = plan();
+    const mod = MOCK_DATASET.modules.INF1107;
+    const replacement = mod.sections.find((section) => section.id === "P2")!;
+    const updated = { ...mod, sections: [replacement] };
+    const dataset = { ...MOCK_DATASET, modules: { ...MOCK_DATASET.modules, INF1107: updated } };
+    expect(resolveSection(p, updated, "LAB")).toEqual({ status: "removed" });
+    expect(sectionListLines(p, dataset)[1].line).not.toContain("LAB P2");
+
+    p.selection.INF1107.LAB = "P2";
+    expect(resolveSection(p, updated, "LAB")).toEqual({ status: "fixed", section: replacement });
+    expect(sectionListLines(p, dataset)[1].line).toContain("LAB P2");
+  });
+  it("defaults a fixed lesson only when there was no saved choice", () => {
+    const p = plan();
+    const mod = MOCK_DATASET.modules.INF1107;
+    delete p.selection.INF1107.LEC;
+    expect(resolveSection(p, mod, "LEC")).toEqual({ status: "fixed", section: mod.sections[0] });
+    expect(resolveSection(p, mod, "WKS")).toEqual({ status: "unselected" });
+    p.selection.INF1107.WKS = "W1";
+    expect(resolveSection(p, mod, "WKS")).toEqual({ status: "removed" });
   });
   it("reports a clash once the module is added", () => {
     const p = { ...plan(), added: ["BAC4000A"], colors: { ...plan().colors, BAC4000A: "pink" as const } };

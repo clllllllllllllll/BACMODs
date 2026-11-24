@@ -108,12 +108,25 @@ export function makeInitialPlan(dataset: TermDataset, intake: string, term: stri
   return { ...base, selection, colors };
 }
 
-/** Chosen section for a lesson type; fixed types resolve without a stored pick. */
-export function chosenSection(plan: Plan, module: Module, lessonType: string): Section | undefined {
+type SectionResolution =
+  | { status: "fixed" | "selected"; section: Section }
+  | { status: "removed" | "unselected"; section?: undefined };
+
+/** Resolve a saved pick before applying a default for fixed classes. */
+export function resolveSection(plan: Plan, module: Module, lessonType: string): SectionResolution {
   const options = sectionsOfType(module, lessonType);
-  if (options.length === 1) return options[0];
   const id = plan.selection[module.code]?.[lessonType];
-  return options.find((s) => s.id === id);
+  if (id !== undefined) {
+    const section = options.find((option) => option.id === id);
+    if (!section) return { status: "removed" };
+    return { status: options.length === 1 ? "fixed" : "selected", section };
+  }
+  if (options.length === 1) return { status: "fixed", section: options[0] };
+  return { status: "unselected" };
+}
+
+export function chosenSection(plan: Plan, module: Module, lessonType: string): Section | undefined {
+  return resolveSection(plan, module, lessonType).section;
 }
 
 /** All sessions of the chosen sections, ready for the timetable views. */
@@ -165,6 +178,16 @@ export function clashesWithPlan(
         (ignore.lessonType === undefined || p.lessonType === ignore.lessonType)
       ) && sessions.some((s) => sessionsClash(s, p.session)),
   );
+}
+
+/** Check the same default picks that adding the module will apply. */
+export function defaultSectionsClash(module: Module, plan: Plan, dataset: TermDataset): boolean {
+  const picks = defaultSelectionFor(module);
+  const sessions = module.sections
+    .filter((section) => picks[section.lessonType] === section.id)
+    .flatMap((section) => section.sessions);
+  return clashingIndexes(sessions.map((session) => ({ session }))).size > 0
+    || clashesWithPlan(sessions, plan, dataset, { moduleCode: module.code });
 }
 
 export interface PlanSummary {
