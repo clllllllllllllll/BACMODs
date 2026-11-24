@@ -174,3 +174,21 @@ Class rows use the full name with a section ("Laboratory · pick one", "Quiz · 
 - Keep the fixed lecture and the selectable tutorial or lab visually distinct. Show the class type, section, time and venue close together when a choice can change the schedule.
 - Reserve heavier elevation for overlays. Use the existing dividers and outlines to separate ordinary rows and cards.
 - Avoid shrinking instructional text to timetable Micro sizes to fit a wider or narrower layout. Let labels wrap and give the schedule more room first.
+
+## 10. Shell copy
+
+Wording added while building the S1 shell on mock data, where §7 has no string for the case. Replace it when the prototype text is available.
+
+| Where | Copy |
+| --- | --- |
+| Setup heading and intro | "Plan your BAC timetable" · "Choose your intake and trimester, pick a section for each class and spot clashes before you register." |
+| Setup primary action | "Start planning" |
+| Setup sheet title and action | "Your plan" · "Update plan" |
+| Share code import | Field "Share code", placeholder "BACMODS-XXXXX", action "Load plan", success Toast "Plan loaded from share code" |
+| Disclaimer (Setup, Modules) | "Unofficial planning tool. Check the registration system before you register." The shell adds "Sample data · version mock-1" while only mock data exists |
+| Sample-data Banner (Info, Modules) | "Showing sample timetable data. Real timetables arrive in a later update." Remove when real data lands |
+| Auto-pick (until built) | Toast "Auto-pick is coming soon. Your sections were not changed." |
+| Calendar tile (until built) | Toast "Calendar export is coming soon." |
+| Clash status | OK: "OK: no clashes" · Clash: "Clash: 1 overlap in your plan" (plural "overlaps") |
+| Empty day | "No classes on Monday this week." |
+| Copy actions | "Section list copied" · "Share code copied" · "Link copied" · failure "Couldn't copy. Select the text and copy it yourself." |

@@ -120,16 +120,16 @@ Each milestone ends with something that runs. **S1 (frontend shell) runs in para
 on mock data, so the UI isn't waiting on the real APA file.
 
 ### S1 — Frontend shell (start now, mock data)
-- [ ] Install Node.js LTS and `npm install` (Node isn't on this machine yet)
-- [ ] Tokens from `design.md` into Tailwind `@theme`: colours, type scale, radii, shadows; Inter via
+- [x] Install Node.js LTS and `npm install` (Node isn't on this machine yet)
+- [x] Tokens from `design.md` into Tailwind `@theme`: colours, type scale, radii, shadows; Inter via
   `next/font`
-- [ ] UI primitives: `Button`, `Chip`, `SelectField`, `TextInput`, `Banner`, `Toast`, status badge,
+- [x] UI primitives: `Button`, `Chip`, `SelectField`, `TextInput`, `Banner`, `Toast`, status badge,
   segmented control, bottom sheet
-- [ ] Layout: `Header` + `ContextPill` (BAC · AY26 · Y1T2), `TabBar` (Timetable → Modules → Export)
-- [ ] All four screens rendered from a typed mock dataset matching the prototype (INF1105, INF1107,
+- [x] Layout: `Header` + `ContextPill` (BAC · AY26 · Y1T2), `TabBar` (Timetable → Modules → Export)
+- [x] All four screens rendered from a typed mock dataset matching the prototype (INF1105, INF1107,
   INF2008, AAI1001, INF2006, BAC4000A)
-- [ ] Mobile-first: content column max 390–480 px, centred on wider screens; desktop layout later
-- [ ] Playwright smoke test at 390 px: setup → modules → timetable → export
+- [x] Mobile-first: content column max 390–480 px, centred on wider screens; desktop layout later
+- [x] Playwright smoke test at 390 px: setup → modules → timetable → export
 - **Done when:** the deployed shell on Vercel clicks through like the Figma prototype, with tokens and states as specified in `design.md`.
 
 ### M0 — Get the real inputs (start now, blocks M1)
