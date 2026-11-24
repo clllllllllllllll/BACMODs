@@ -35,11 +35,22 @@ Windows 10, PowerShell, Node.js LTS, npm. Supabase runs locally in Docker; the a
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run test` | Vitest (pure logic in `src/lib/`) |
 | `docker compose up --build -d` | Serve the app on `localhost:3000` from the Docker image (`docker compose down` stops it) |
-| `npm run test:e2e` | Playwright smoke test at 390 px against `localhost:3000`; start the container first, or set `PLAYWRIGHT_BASE_URL` |
+| `npm run test:e2e` | Playwright flows at 390, 768, 1024 and 1440 px against `localhost:3000`; start the container first, or set `PLAYWRIGHT_BASE_URL` |
 | `npm run db:start` / `db:stop` | Local Supabase (needs Docker Desktop) |
 | `npm run db:reset` | Recreate local DB from migrations + `supabase/seed.sql` |
 
 Planned, add them when the tooling lands: `import` / `publish` / `diff` (importer CLI).
+
+For S1 acceptance, pass the checked-out commit to the image build and enable the Playwright check
+that compares the page's `bacmods-git-commit` metadata with `git rev-parse HEAD`.
+
+```powershell
+$env:BACMODS_GIT_COMMIT = git rev-parse HEAD
+docker compose up --build -d
+$env:PLAYWRIGHT_EXPECT_BUILD = '1'
+npm run test:e2e
+docker compose down
+```
 
 ## 3. Hard rules
 

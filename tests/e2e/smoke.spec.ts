@@ -1,7 +1,15 @@
+import { execFileSync } from "node:child_process";
 import { expect, test } from "@playwright/test";
 
-// Walks the S1 shell at 390, 768 and 1440 px (see playwright.config.ts projects): setup → modules → timetable → export.
+// Walks the S1 shell at 390, 768, 1024 and 1440 px: setup → modules → timetable → export.
 // Mock data only. Run against the Docker container: `docker compose up --build -d`.
+test("the container was built from the checked-out commit", async ({ page }) => {
+  test.skip(process.env.PLAYWRIGHT_EXPECT_BUILD === undefined, "Set PLAYWRIGHT_EXPECT_BUILD for Docker acceptance");
+  const commit = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  await page.goto("/");
+  await expect(page.locator('meta[name="bacmods-git-commit"]')).toHaveAttribute("content", commit);
+});
+
 test("setup → modules → timetable → export", async ({ page }) => {
   const desktop = (page.viewportSize()?.width ?? 0) >= 1024;
   // Setup

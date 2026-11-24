@@ -4,10 +4,12 @@ import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], display: "swap", variable: "--font-inter" });
+const buildCommit = process.env.NEXT_PUBLIC_BACMODS_GIT_COMMIT;
 
 export const metadata: Metadata = {
   title: "BACMODS",
   description: "Unofficial timetable planner for SIT Applied Computing (BAC) students.",
+  other: buildCommit ? { "bacmods-git-commit": buildCommit } : undefined,
 };
 
 export const viewport: Viewport = {

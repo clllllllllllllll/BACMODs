@@ -11,7 +11,8 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+ARG BACMODS_GIT_COMMIT
+RUN NEXT_PUBLIC_BACMODS_GIT_COMMIT="$BACMODS_GIT_COMMIT" npm run build
 
 FROM node:24-alpine AS run
 WORKDIR /app
