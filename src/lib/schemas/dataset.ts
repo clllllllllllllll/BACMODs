@@ -24,7 +24,7 @@ export const SessionSchema = z.object({
   venue: z.string().nullable(),
   /** Teaching-week numbers this session runs in. */
   weeks: z.array(z.number().int().min(1)).min(1),
-});
+}).refine(({ start, end }) => end > start, { path: ["end"], message: "End time must be after start time" });
 
 export const SectionSchema = z.object({
   /** Section code within its lesson type, e.g. "ALL", "P3", "Q1". */
@@ -45,7 +45,10 @@ export const ModuleSchema = z.object({
 
 export const CalendarSchema = z.object({
   /** ISO date (YYYY-MM-DD) of the Monday of teaching week 1. */
-  week1Monday: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  week1Monday: z.iso.date().refine(
+    (date) => new Date(`${date}T00:00:00Z`).getUTCDay() === 1,
+    { message: "Teaching week 1 must start on a Monday" },
+  ),
   teachingWeeks: z.number().int().min(1),
   /** A recess week follows each of these teaching weeks. */
   recessAfterWeeks: z.array(z.number().int().min(1)),

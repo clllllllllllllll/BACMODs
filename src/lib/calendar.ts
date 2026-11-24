@@ -2,15 +2,10 @@ import type { TermCalendar } from "@/lib/schemas/dataset";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-function parseIso(iso: string): number {
-  const [y, m, d] = iso.split("-").map(Number);
-  return Date.UTC(y, m - 1, d);
-}
-
 /** Monday of a teaching week, as a UTC timestamp. Recess weeks push later weeks back. */
 export function weekMonday(calendar: TermCalendar, week: number): number {
   const recessBefore = calendar.recessAfterWeeks.filter((w) => w < week).length;
-  return parseIso(calendar.week1Monday) + (week - 1 + recessBefore) * 7 * DAY_MS;
+  return Date.parse(`${calendar.week1Monday}T00:00:00Z`) + (week - 1 + recessBefore) * 7 * DAY_MS;
 }
 
 /** Date of a weekday (1 = Mon) in a teaching week, as a UTC timestamp. */
