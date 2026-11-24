@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { SetupForm } from "@/components/layout/SetupSheet";
+import { MOCK_DATASET } from "@/lib/mock/dataset";
 
 /** First-visit screen: pick programme, intake and trimester, then start on Modules. */
 export default function SetupScreen() {
@@ -16,7 +17,7 @@ export default function SetupScreen() {
       </div>
       <SetupForm submitLabel="Start planning" large onDone={() => router.push("/modules")} />
       <p className="text-small text-fg-secondary">
-        Unofficial planning tool. Always check the registration system. Showing sample data only.
+        Unofficial planning tool. Check the registration system before you register. Sample data · version {MOCK_DATASET.version}
       </p>
     </div>
   );

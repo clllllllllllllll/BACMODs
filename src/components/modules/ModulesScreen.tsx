@@ -7,7 +7,7 @@ import WeekPreview from "@/components/modules/WeekPreview";
 import Banner from "@/components/ui/Banner";
 import { usePlan } from "@/hooks/use-plan";
 import { MOCK_DATASET } from "@/lib/mock/dataset";
-import { curriculumCodes, summarise } from "@/lib/plan";
+import { curriculumCodes, planCodes, summarise } from "@/lib/plan";
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -32,7 +32,8 @@ export default function ModulesScreen() {
   const dataset = MOCK_DATASET;
   const groups = curriculumCodes(plan, dataset);
   const summary = summarise(plan, dataset);
-  const added = plan.added.filter((c) => c in dataset.modules);
+  const listed = new Set(groups ? [...groups.choice, ...groups.fixed, ...groups.optional] : []);
+  const added = planCodes(plan, dataset).filter((code) => !listed.has(code));
   const card = (code: string, removable = false) => (
     <ModuleCard key={code} module={dataset.modules[code]} plan={plan} dataset={dataset} removable={removable} />
   );
@@ -58,17 +59,23 @@ export default function ModulesScreen() {
         />
       </dl>
 
-      {groups.choice.length > 0 ? <Group title="Mandatory · with choice">{groups.choice.map((c) => card(c))}</Group> : null}
-      {groups.fixed.length > 0 ? <Group title="Mandatory · no choice">{groups.fixed.map((c) => card(c))}</Group> : null}
-      <Group title="Optional">
-        {groups.optional.length > 0 ? (
-          groups.optional.map((c) => card(c))
-        ) : (
-          <p className="rounded-control border border-dashed border-line bg-card px-4 py-4 text-body text-fg-secondary">
-            No optional modules in {plan.term}.
-          </p>
-        )}
-      </Group>
+      {groups ? (
+        <>
+          {groups.choice.length > 0 ? <Group title="Mandatory · with choice">{groups.choice.map((c) => card(c))}</Group> : null}
+          {groups.fixed.length > 0 ? <Group title="Mandatory · no choice">{groups.fixed.map((c) => card(c))}</Group> : null}
+          <Group title="Optional">
+            {groups.optional.length > 0 ? (
+              groups.optional.map((c) => card(c))
+            ) : (
+              <p className="rounded-control border border-dashed border-line bg-card px-4 py-4 text-body text-fg-secondary">
+                No optional modules in {plan.term}.
+              </p>
+            )}
+          </Group>
+        </>
+      ) : (
+        <Banner variant="info">Curriculum for {plan.intake} · {plan.term} is unavailable. You can still add modules below.</Banner>
+      )}
       {added.length > 0 ? <Group title="Not on your list">{added.map((c) => card(c, true))}</Group> : null}
 
       <AddModuleSearch plan={plan} dataset={dataset} />

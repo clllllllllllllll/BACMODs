@@ -168,6 +168,7 @@ The following states are not drawn in Figma. Build them from existing components
 | New dataset version | Info Banner on the Modules and Timetable screens: "Timetable updated on [date]". If a chosen section no longer exists, its Class row shows the warning pair and "Section removed — pick again". |
 | Offline | The last loaded plan and dataset stay usable. Show a Toast "You're offline. Showing saved timetable". Share code import and Copy share code are disabled with that reason in the helper text. |
 | Invalid share code | Covered by the Text input Error state. Message: "That code doesn't match a saved plan. Check it and try again." |
+| Curriculum unavailable | Show an Info Banner on Modules: "Curriculum for AY25 · Y1T2 is unavailable. You can still add modules below." Use the current intake and term. Keep module search available. |
 | No modules this term | Modules screen shows the empty Optional card treatment ("No optional modules in Y1T2.") for each empty group. |
 | Saturday classes | Day tabs show Mon–Fri. Add a Sat tab, and a Sat column in Week view, only when the plan has a Saturday session that term. |
 

@@ -6,8 +6,9 @@ import Button from "@/components/ui/Button";
 import SelectField from "@/components/ui/SelectField";
 import TextInput from "@/components/ui/TextInput";
 import { useToast } from "@/components/ui/Toast";
-import { planActions, usePlan } from "@/hooks/use-plan";
+import { planActions, usePlanState } from "@/hooks/use-plan";
 import { lookupMockShare } from "@/lib/mock/shares";
+import type { Plan } from "@/lib/schemas/plan";
 import { parseShareInput } from "@/lib/share";
 
 const INTAKES = [
@@ -19,9 +20,29 @@ const TERMS = [{ value: "Y1T2", label: "Y1T2 · Upcoming" }];
 
 const INVALID_CODE = "That code doesn't match a saved plan. Check it and try again.";
 
-/** Setup fields shared by the first-visit page and the sheet. */
-export function SetupForm({ submitLabel, large, onDone }: { submitLabel: string; large?: boolean; onDone: () => void }) {
-  const plan = usePlan();
+type SetupFormProps = { submitLabel: string; large?: boolean; onDone: () => void };
+
+export function SetupPlaceholder() {
+  return (
+    <div aria-busy="true" className="flex flex-col gap-4">
+      <div className="h-10 rounded-control bg-page" />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="h-10 rounded-control bg-page" />
+        <div className="h-10 rounded-control bg-page" />
+      </div>
+      <div className="h-12 rounded-control bg-page" />
+    </div>
+  );
+}
+
+/** Mount form state only after the saved plan is known. */
+export function SetupForm(props: SetupFormProps) {
+  const { plan, loaded } = usePlanState();
+  if (!loaded) return <SetupPlaceholder />;
+  return <SetupFields key={JSON.stringify([plan.programme, plan.intake, plan.term])} plan={plan} {...props} />;
+}
+
+function SetupFields({ plan, submitLabel, large, onDone }: SetupFormProps & { plan: Plan }) {
   const toast = useToast();
   const [intake, setIntake] = useState(plan.intake);
   const [term, setTerm] = useState(plan.term);

@@ -5,17 +5,19 @@ import Button from "@/components/ui/Button";
 import StatusBadge from "@/components/ui/StatusBadge";
 import TextInput from "@/components/ui/TextInput";
 import { planActions } from "@/hooks/use-plan";
-import { clashesWithPlan, curriculumCodes } from "@/lib/plan";
+import { clashesWithPlan, curriculumCodes, normalizeModuleCode } from "@/lib/plan";
 import type { TermDataset } from "@/lib/schemas/dataset";
 import type { Plan } from "@/lib/schemas/plan";
 
 /** Search for modules that are not on the student curriculum list and add them to the plan. */
 export default function AddModuleSearch({ plan, dataset }: { plan: Plan; dataset: TermDataset }) {
   const [query, setQuery] = useState("");
-  const onList = new Set(Object.values(curriculumCodes(plan, dataset)).flat());
+  const onList = new Set(Object.values(curriculumCodes(plan, dataset) ?? {}).flat());
+  const added = new Set(plan.added.map(normalizeModuleCode));
   const q = query.trim().toUpperCase();
+  const codeQuery = normalizeModuleCode(q);
   const results = Object.values(dataset.modules).filter(
-    (m) => !onList.has(m.code) && (q === "" || m.code.includes(q.replace(/\s+/g, "")) || m.title.toUpperCase().includes(q)),
+    (m) => !onList.has(m.code) && (m.code.includes(codeQuery) || m.title.toUpperCase().includes(q)),
   );
 
   return (
@@ -36,7 +38,7 @@ export default function AddModuleSearch({ plan, dataset }: { plan: Plan; dataset
           <li className="px-4 py-3 text-small text-fg-secondary">No modules match “{query}”.</li>
         ) : (
           results.map((m) => {
-            const inPlan = plan.added.includes(m.code);
+            const inPlan = added.has(m.code);
             const clash = !inPlan && clashesWithPlan(m.sections.flatMap((s) => s.sessions), plan, dataset, { moduleCode: m.code });
             return (
               <li key={m.code} className="flex items-center gap-3 px-4 py-3">

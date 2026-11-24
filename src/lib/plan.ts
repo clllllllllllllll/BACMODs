@@ -42,28 +42,47 @@ export function nextColor(used: ModuleColor[]): ModuleColor {
   return free ?? MODULE_COLORS[used.length % MODULE_COLORS.length];
 }
 
+export function normalizeModuleCode(code: string): string {
+  return code.replace(/\s+/g, "").toUpperCase();
+}
+
 /** Module codes on the student's curriculum list for the plan's term, in display order. */
 export function curriculumCodes(
   plan: Plan,
   dataset: TermDataset,
-): { choice: string[]; fixed: string[]; optional: string[] } {
-  const trimester = plan.term.slice(2); // "Y1T2" → "T2"
-  const year = Number(plan.term[1]);
-  const entries = dataset.curriculum.filter((c) => c.year === year && c.trimester === trimester);
-  const mandatory = entries.filter((c) => c.kind === "mandatory").map((c) => c.code);
-  const optional = entries.filter((c) => c.kind === "elective").map((c) => c.code);
-  const known = (code: string) => code in dataset.modules;
-  return {
-    choice: mandatory.filter((c) => known(c) && hasChoice(dataset.modules[c])),
-    fixed: mandatory.filter((c) => known(c) && !hasChoice(dataset.modules[c])),
-    optional: optional.filter(known),
-  };
+): { choice: string[]; fixed: string[]; optional: string[] } | null {
+  const [, year, trimester] = /^Y(\d+)(T[1-3])$/.exec(plan.term) ?? [];
+  const intake = /^AY(\d{2}|\d{4})$/.exec(plan.intake)?.[1];
+  const intakeAy = intake?.length === 2 ? 2000 + Number(intake) : Number(intake);
+  const entries = dataset.curriculum.filter(
+    (entry) => entry.programme === plan.programme && entry.intakeAy === intakeAy
+      && entry.year === Number(year) && entry.trimester === trimester,
+  );
+  if (entries.length === 0) return null;
+
+  const kinds = new Map<string, "mandatory" | "elective">();
+  for (const entry of entries) {
+    const code = normalizeModuleCode(entry.code);
+    if (Object.hasOwn(dataset.modules, code) && kinds.get(code) !== "mandatory") {
+      kinds.set(code, entry.kind);
+    }
+  }
+
+  const groups = { choice: [] as string[], fixed: [] as string[], optional: [] as string[] };
+  for (const [code, kind] of kinds) {
+    if (kind === "elective") groups.optional.push(code);
+    else if (hasChoice(dataset.modules[code])) groups.choice.push(code);
+    else groups.fixed.push(code);
+  }
+  return groups;
 }
 
 /** Every module in the plan: curriculum groups first, then added ones. */
 export function planCodes(plan: Plan, dataset: TermDataset): string[] {
-  const c = curriculumCodes(plan, dataset);
-  return [...c.choice, ...c.fixed, ...c.optional, ...plan.added.filter((a) => a in dataset.modules)];
+  const groups = curriculumCodes(plan, dataset);
+  const listed = groups ? [...groups.choice, ...groups.fixed, ...groups.optional] : [];
+  const added = plan.added.map(normalizeModuleCode).filter((code) => Object.hasOwn(dataset.modules, code));
+  return [...new Set([...listed, ...added])];
 }
 
 export function makeInitialPlan(dataset: TermDataset, intake: string, term: string): Plan {
