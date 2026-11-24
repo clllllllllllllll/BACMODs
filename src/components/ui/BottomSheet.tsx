@@ -1,0 +1,52 @@
+"use client";
+
+import { useEffect, useId, useRef } from "react";
+
+/**
+ * Modal bottom sheet on the native dialog element: the browser traps focus, closes on Esc and
+ * returns focus to the trigger. `radius` is the top-corner class (Setup sheet 12 px, Share sheet 16 px).
+ */
+export default function BottomSheet({
+  open,
+  onClose,
+  title,
+  radius = "rounded-t-sheet",
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  radius?: string;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
+
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) dialog.showModal();
+    if (!open && dialog.open) dialog.close();
+  }, [open]);
+
+  return (
+    <dialog
+      ref={ref}
+      aria-labelledby={titleId}
+      className={`sheet ${radius}`}
+      onClose={onClose}
+      onClick={(e) => {
+        // A click on the backdrop lands on the dialog element itself.
+        if (e.target === ref.current) onClose();
+      }}
+    >
+      <div className="px-4 pb-6 pt-2">
+        <div aria-hidden="true" className="mx-auto mb-3 h-1 w-10 rounded-handle bg-line" />
+        <h2 id={titleId} className="mb-4 text-heading">
+          {title}
+        </h2>
+        {children}
+      </div>
+    </dialog>
+  );
+}

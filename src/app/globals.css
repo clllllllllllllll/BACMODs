@@ -1,1 +1,191 @@
 @import "tailwindcss";
+
+/*
+ * Design tokens from design.md (the single source of truth). Figma style → token:
+ *   primary/600 → primary          text/primary → fg           border/default → line
+ *   primary/50  → primary-50       text/secondary → fg-secondary   surface/page → page
+ *   danger/600  → danger           text/tertiary → fg-tertiary     surface/card → card
+ *   *-text tokens exist only in design.md §2 and are used for any accent-coloured text.
+ */
+@theme {
+  --color-primary: #2d4bd8;
+  --color-primary-50: #eef1fd;
+  --color-on-primary: #ffffff;
+  --color-fg: #111827;
+  --color-fg-secondary: #6b7280;
+  /* Placeholders and disabled values only (2.4:1). Never for text that must be read. */
+  --color-fg-tertiary: #9ca3af;
+  --color-line: #e5e7eb;
+  --color-page: #f7f7f8;
+  --color-card: #ffffff;
+
+  --color-danger: #dc2626;
+  --color-danger-50: #fee2e2;
+  --color-danger-text: #b91c1c;
+  --color-success: #16a34a;
+  --color-success-50: #dcfce7;
+  --color-success-text: #15803d;
+  --color-warning: #b45309;
+  --color-warning-50: #fef3c7;
+
+  --color-module-blue: #4263eb;
+  --color-module-blue-50: #edf2ff;
+  --color-module-blue-text: #3b5bdb;
+  --color-module-purple: #7048e8;
+  --color-module-purple-50: #f3f0ff;
+  --color-module-purple-text: #7048e8;
+  --color-module-green: #2b8a3e;
+  --color-module-green-50: #ebfbee;
+  --color-module-green-text: #237032;
+  --color-module-orange: #d9480f;
+  --color-module-orange-50: #fff4e6;
+  --color-module-orange-text: #c2410c;
+  --color-module-pink: #c2255c;
+  --color-module-pink-50: #fff0f6;
+  --color-module-pink-text: #c2255c;
+  --color-module-teal: #0c8599;
+  --color-module-teal-50: #e3fafc;
+  --color-module-teal-text: #0b7285;
+  --color-module-slate: #475569;
+  --color-module-slate-50: #f1f5f9;
+  --color-module-slate-text: #475569;
+
+  /* Scrims: #111827 at 12% and 40% */
+  --color-scrim-light: rgb(17 24 39 / 12%);
+  --color-scrim: rgb(17 24 39 / 40%);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* Type scale (design.md §3). Label also needs the `uppercase` utility. */
+  --text-heading: 18px;
+  --text-heading--line-height: 1.3;
+  --text-heading--font-weight: 600;
+  --text-wordmark: 16px;
+  --text-wordmark--line-height: 1.4;
+  --text-wordmark--font-weight: 700;
+  --text-wordmark--letter-spacing: -0.01em;
+  --text-title: 15px;
+  --text-title--line-height: 1.4;
+  --text-title--font-weight: 600;
+  --text-body: 14px;
+  --text-body--line-height: 1.4;
+  --text-body--font-weight: 400;
+  --text-body-medium: 14px;
+  --text-body-medium--line-height: 1.4;
+  --text-body-medium--font-weight: 500;
+  --text-small: 12px;
+  --text-small--line-height: 1.4;
+  --text-small--font-weight: 400;
+  --text-small-medium: 12px;
+  --text-small-medium--line-height: 1.4;
+  --text-small-medium--font-weight: 500;
+  --text-label: 11px;
+  --text-label--line-height: 1.4;
+  --text-label--font-weight: 600;
+  --text-label--letter-spacing: 0.04em;
+  --text-caption: 11px;
+  --text-caption--line-height: 1.4;
+  --text-caption--font-weight: 400;
+  --text-micro: 10px;
+  --text-micro--line-height: 1.3;
+  --text-micro--font-weight: 600;
+  --text-micro-regular: 10px;
+  --text-micro-regular--line-height: 1.3;
+  --text-micro-regular--font-weight: 400;
+
+  /* Radii by shape (design.md §4) */
+  --radius-handle: 2px;
+  --radius-chip: 4px;
+  --radius-block: 6px;
+  --radius-clash: 7px;
+  --radius-control: 8px;
+  --radius-day-tab: 10px;
+  --radius-sheet: 12px;
+  --radius-share: 16px;
+
+  /* Depth (design.md §5) */
+  --shadow-popover: 0 8px 24px 0 rgb(17 24 39 / 12%), 0 1px 2px 0 rgb(0 0 0 / 6%);
+  --shadow-ring: 0 0 0 3px rgb(45 75 216 / 18%);
+  --shadow-small: 0 1px 2px 0 rgb(17 24 39 / 10%);
+}
+
+/* Visible keyboard focus: primary outline plus the Focus/Ring glow. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    box-shadow: var(--shadow-ring);
+  }
+}
+
+/* Focused fields and open selects: white fill, primary border, ring (design.md §7). */
+@utility field-focus {
+  &:focus-visible,
+  &:focus {
+    outline: none;
+    background-color: var(--color-card);
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-ring);
+  }
+}
+
+@layer base {
+  html {
+    background-color: var(--color-page);
+  }
+  body {
+    background-color: var(--color-page);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+  }
+  button,
+  [role="tab"],
+  summary {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+/* Bottom sheet built on <dialog>: modal focus trap, Esc and focus restore come from the browser. */
+dialog.sheet {
+  margin: auto auto 0;
+  padding: 0;
+  border: 0;
+  width: 100%;
+  max-width: 30rem;
+  max-height: 90dvh;
+  background: var(--color-card);
+  color: var(--color-fg);
+  box-shadow: var(--shadow-popover);
+  overflow: auto;
+}
+dialog.sheet::backdrop {
+  background: var(--color-scrim);
+}
+@media (prefers-reduced-motion: no-preference) {
+  dialog.sheet[open] {
+    animation: sheet-in 200ms ease-out;
+  }
+  dialog.sheet[open]::backdrop {
+    animation: fade-in 200ms ease-out;
+  }
+  .toast-in {
+    animation: fade-in 150ms ease-out;
+  }
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
