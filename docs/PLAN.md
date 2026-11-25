@@ -142,8 +142,7 @@ on mock data, so the UI isn't waiting on the real APA file.
 - [x] Run axe accessibility checks on all four screens, both timetable views, the Setup sheet
   and the Share dialog at 390 and 1440 px.
 - [x] Configure GitHub Actions for lint, typecheck, Vitest, production builds and Docker-backed
-  Playwright. Add pull-request guards for secrets and private data paths, plus weekly Dependabot
-  updates for npm and GitHub Actions.
+  Playwright. Add pull-request guards for secrets and private data paths.
 - [ ] Verify the CI and guard jobs on the first GitHub pull request with these workflows.
 - **Done when:** `docker compose up --build` serves a shell that clicks through like the Figma prototype,
   with tokens and states as specified in `design.md`. Deploying to Vercel moves to M7.
