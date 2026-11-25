@@ -47,7 +47,9 @@ export default function ClassRow({
         ))
       ) : status === "removed" ? (
         // The saved section no longer exists in this dataset version (design.md §7).
-        <span className="text-small-medium text-warning">Section removed — pick again</span>
+        <span className="text-small-medium text-warning">
+          {editable ? "Section removed — pick again" : "No sections available"}
+        </span>
       ) : null}
     </span>
   );

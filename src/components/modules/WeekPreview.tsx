@@ -4,14 +4,17 @@ import WeekSwitcher from "@/components/timetable/WeekSwitcher";
 import WeekView from "@/components/timetable/WeekView";
 import ClashStatus from "@/components/timetable/ClashStatus";
 import { planActions } from "@/hooks/use-plan";
-import { hasSaturday, planClashes } from "@/lib/plan";
-import type { TermDataset } from "@/lib/schemas/dataset";
-import type { Plan } from "@/lib/schemas/plan";
+import { hasSaturday, type PlannedSession } from "@/lib/plan";
+import type { TermCalendar } from "@/lib/schemas/dataset";
 
 /** Desktop only: the same week grid as the Timetable screen, beside the module cards. */
-export default function WeekPreview({ plan, dataset }: { plan: Plan; dataset: TermDataset }) {
-  const { count, items } = planClashes(plan, dataset);
-  const week = Math.min(plan.week, dataset.calendar.teachingWeeks);
+export default function WeekPreview({ items, count, selectedWeek, calendar }: {
+  items: PlannedSession[];
+  count: number;
+  selectedWeek: number;
+  calendar: TermCalendar;
+}) {
+  const week = Math.min(selectedWeek, calendar.teachingWeeks);
   const inWeek = items.filter((i) => i.session.weeks.includes(week));
   return (
     <aside
@@ -24,7 +27,7 @@ export default function WeekPreview({ plan, dataset }: { plan: Plan; dataset: Te
         </h2>
         <ClashStatus count={count} />
       </div>
-      <WeekSwitcher calendar={dataset.calendar} week={week} onChange={planActions.setWeek} />
+      <WeekSwitcher calendar={calendar} week={week} onChange={planActions.setWeek} />
       <WeekView items={inWeek} allItems={items} showSaturday={hasSaturday(items)} />
     </aside>
   );

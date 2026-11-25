@@ -206,6 +206,7 @@ on mock data, so the UI isn't waiting on the real APA file.
 - [ ] Banner: "unofficial, verify in the registration system", plus dataset version/date
 
 ### Later (post-registration)
+- [ ] Reopen the last saved plan and timetable offline after leaving the app
 - Entra ID login once approved; saved timetables per user
 - Programmes beyond BAC (curriculum JSON + programme picker)
 - Student-facing "what changed" view between dataset versions ("your class moved")

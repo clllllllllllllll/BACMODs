@@ -46,7 +46,7 @@ test("setup → modules → timetable → export", async ({ page }) => {
     const aside = await preview.boundingBox();
     expect(aside!.x).toBeGreaterThan(card!.x + card!.width);
   } else {
-    await expect(page.getByRole("complementary", { name: "Week preview" })).toBeHidden();
+    await expect(page.getByRole("complementary", { name: "Week preview", includeHidden: true })).toHaveCount(0);
   }
 
   // Add a module that clashes with INF1107's lecture

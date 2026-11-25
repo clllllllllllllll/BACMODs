@@ -164,8 +164,8 @@ The following states are not drawn in Figma. Build them from existing components
 | State | Treatment |
 | --- | --- |
 | Loading | Keep the Header and Tab bar in place. Show page-gray placeholder blocks in the shape of the cards or the timetable grid. No spinner for loads under about 300 ms. |
-| No dataset for the chosen term | On Setup, the Trimester select lists only terms with a published dataset. If a saved plan points at a term with none, show a warning Banner: "Timetable for Y1T3 isn't out yet" with a link back to Setup. |
-| New dataset version | Info Banner on the Modules and Timetable screens: "Timetable updated on [date]". If a chosen section no longer exists, its Class row shows the warning pair and "Section removed — pick again". |
+| No dataset for the chosen term | On Setup, the Trimester select lists only terms with a published dataset. If a saved plan points at a term with none, show a warning Banner: "Timetable for Y1T3 isn't out yet" with a "Go to setup" link. |
+| New dataset version | Info Banner on the Modules and Timetable screens: "Timetable updated on [date]". If a chosen section no longer exists, its Class row shows the warning pair and "Section removed — pick again" when alternatives exist, or "No sections available" when the lesson type has no sections. |
 | Offline | The last loaded plan and dataset stay usable. Show a Toast "You're offline. Showing saved timetable". Share code import and Copy share code are disabled with that reason in the helper text. |
 | Invalid share code | Covered by the Text input Error state. Message: "That code doesn't match a saved plan. Check it and try again." |
 | Curriculum unavailable | Show an Info Banner on Modules: "Curriculum for AY25 · Y1T2 is unavailable. You can still add modules below." Use the current intake and term. Keep module search available. |

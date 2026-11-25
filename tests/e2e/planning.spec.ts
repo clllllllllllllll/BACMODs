@@ -79,6 +79,101 @@ test("a removed pick must be replaced even if only one section remains", async (
   await expect(programming.getByText("Fixed", { exact: true })).toBeVisible();
 });
 
+test("a removed lesson type explains that there are no sections to pick", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem("bacmods:plan:v1", JSON.stringify({
+      programme: "BAC", intake: "AY26", term: "Y1T2", added: [],
+      selection: { INF1105: { WKS: "OLD" } }, colors: {}, view: "auto", week: 1,
+    }));
+  });
+  await page.goto("/modules");
+  const workshop = page.getByRole("region", { name: "INF1105" }).getByRole("listitem").filter({ hasText: "Workshop" });
+  await expect(workshop.getByText("No sections available", { exact: true })).toBeVisible();
+  await expect(workshop.getByRole("button")).toHaveCount(0);
+});
+
+test("an unsupported saved term shows a setup path and no sample timetable", async ({ page }) => {
+  await page.addInitScript(() => {
+    const key = 'bacmods:plan:v2:["BAC","AY26","Y1T3"]';
+    localStorage.setItem("bacmods:plan:v2:active", key);
+    localStorage.setItem(key, JSON.stringify({
+      programme: "BAC", intake: "AY26", term: "Y1T3", added: ["INF2006"],
+      selection: { INF2006: { LEC: "ALL", LAB: "L2" } }, colors: { INF2006: "teal" }, view: "week", week: 4,
+    }));
+  });
+  await page.goto("/timetable");
+  const warning = page.getByRole("alert");
+  await expect(warning).toContainText("Timetable for Y1T3 isn't out yet");
+  await expect(page.getByRole("group", { name: "Week timetable" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Next week" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Modules" }).click();
+  await expect(page.getByRole("heading", { name: "Modules", level: 1 })).toBeVisible();
+  await expect(page.getByRole("complementary", { name: "Week preview", includeHidden: true })).toHaveCount(0);
+  await page.getByRole("link", { name: "Timetable" }).click();
+  await warning.getByRole("link", { name: "Go to setup" }).click();
+  await expect(page.getByRole("combobox", { name: "Trimester" })).toHaveValue("Y1T2");
+  await page.getByRole("button", { name: "Start planning" }).click();
+  await expect(page.getByRole("button", { name: /Plan: BAC, AY26, Y1T2/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add INF2006" })).toBeVisible();
+});
+
+test("day tabs keep the selected weekday across weeks and support keyboard navigation", async ({ page }) => {
+  await page.goto("/timetable");
+  await page.getByRole("button", { name: "Day", exact: true }).click();
+  const tabs = page.getByRole("tablist", { name: "Day" });
+  const monday = tabs.getByRole("tab", { name: /^Monday/ });
+  const tuesday = tabs.getByRole("tab", { name: /^Tuesday/ });
+  const friday = tabs.getByRole("tab", { name: /^Friday/ });
+  const nextWeek = page.getByRole("button", { name: "Next week" });
+
+  await nextWeek.focus();
+  await page.keyboard.press("Tab");
+  await expect(monday).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(tuesday).toBeFocused();
+  await expect(tuesday).toHaveAttribute("aria-selected", "true");
+  await expect(tabs.locator('[tabindex="0"]')).toHaveCount(1);
+  await expect(monday).toHaveAttribute("tabindex", "-1");
+  const panel = page.getByRole("tabpanel", { name: /^Tuesday/ });
+  await expect(panel.getByText("INF1107", { exact: true })).toBeVisible();
+  await page.keyboard.press("Tab");
+  await expect(panel).toBeFocused();
+
+  await nextWeek.click();
+  await expect(page.getByText("Week 2", { exact: true })).toBeVisible();
+  await expect(tuesday).toHaveAttribute("aria-selected", "true");
+  await expect(tuesday).toHaveAccessibleName("Tuesday 19 Jan");
+  await expect(panel.getByText("INF1107", { exact: true })).toBeVisible();
+
+  await tuesday.press("End");
+  await expect(friday).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(monday).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
+  await expect(friday).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(monday).toBeFocused();
+  await expect(monday).toHaveAttribute("aria-selected", "true");
+});
+
+test("copy list is disabled for an empty plan and copies the displayed sections once added", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/");
+  await page.getByRole("combobox", { name: "Intake" }).selectOption("AY25");
+  await page.getByRole("button", { name: "Start planning" }).click();
+  await page.getByRole("link", { name: "Export" }).click();
+  const copy = page.getByRole("button", { name: "Copy list" });
+  await expect(copy).toBeDisabled();
+  await page.getByRole("link", { name: "Modules" }).click();
+  await page.getByRole("button", { name: "Add INF2006" }).click();
+  await expect(page.getByRole("button", { name: "Remove INF2006" })).toBeVisible();
+  await page.getByRole("link", { name: "Export" }).click();
+  await expect(page.getByRole("listitem").filter({ hasText: "INF2006" }).getByText("LAB L1")).toBeVisible();
+  await copy.click();
+  await expect(page.getByRole("status").filter({ hasText: "Section list copied" })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe("INF2006 LEC ALL · LAB L1");
+});
+
 test("Auto-pick handles arrow keys only inside the menu", async ({ page }) => {
   await page.goto("/modules");
   const trigger = page.getByRole("button", { name: "Auto-pick" });

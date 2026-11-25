@@ -10,7 +10,7 @@ import {
   planClashes,
   planCodes,
   resolveSection,
-  sectionListLines,
+  sectionListRows,
   summarise,
 } from "@/lib/plan";
 import type { CurriculumEntry, TermDataset } from "@/lib/schemas/dataset";
@@ -86,11 +86,11 @@ describe("plan", () => {
     const updated = { ...mod, sections: [replacement] };
     const dataset = { ...MOCK_DATASET, modules: { ...MOCK_DATASET.modules, INF1107: updated } };
     expect(resolveSection(p, updated, "LAB")).toEqual({ status: "removed" });
-    expect(sectionListLines(p, dataset)[1].line).not.toContain("LAB P2");
+    expect(sectionListRows(p, dataset)[1].sections).not.toContain("LAB P2");
 
     p.selection.INF1107.LAB = "P2";
     expect(resolveSection(p, updated, "LAB")).toEqual({ status: "fixed", section: replacement });
-    expect(sectionListLines(p, dataset)[1].line).toContain("LAB P2");
+    expect(sectionListRows(p, dataset)[1].sections).toContain("LAB P2");
   });
   it("defaults a fixed lesson only when there was no saved choice", () => {
     const p = plan();
@@ -108,10 +108,11 @@ describe("plan", () => {
   it("summarises credits, days and earliest start", () => {
     expect(summarise(plan(), MOCK_DATASET)).toMatchObject({ credits: 15, earliestStart: "09:00", clashes: 0 });
   });
-  it("lists chosen sections one line per module", () => {
-    expect(sectionListLines(plan(), MOCK_DATASET)[1]).toEqual({
+  it("lists the chosen section labels and colour for each module", () => {
+    expect(sectionListRows(plan(), MOCK_DATASET)[1]).toEqual({
       code: "INF1107",
-      line: "INF1107 LEC ALL · LAB P1 · QUIZ Q1",
+      color: "purple",
+      sections: ["LEC ALL", "LAB P1", "QUIZ Q1"],
     });
   });
 });

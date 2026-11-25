@@ -1,5 +1,6 @@
 import type { Module, Section, Session, TermDataset } from "@/lib/schemas/dataset";
 import { MODULE_COLORS, type ModuleColor, type Plan, type Selection } from "@/lib/schemas/plan";
+import { shortLabel } from "@/lib/class-types";
 import { clashingIndexes, sessionsClash } from "@/lib/clash";
 import { toMinutes } from "@/lib/time";
 
@@ -155,13 +156,12 @@ export function plannedSessions(plan: Plan, dataset: TermDataset): PlannedSessio
 export function planClashes(
   plan: Plan,
   dataset: TermDataset,
-): { count: number; indexes: Set<number>; items: PlannedSession[] } {
+): { count: number; items: PlannedSession[] } {
   const items = plannedSessions(plan, dataset);
-  const indexes = clashingIndexes(items);
   let count = 0;
   for (let i = 0; i < items.length; i++)
     for (let j = i + 1; j < items.length; j++) if (sessionsClash(items[i].session, items[j].session)) count++;
-  return { count, indexes, items };
+  return { count, items };
 }
 
 /** Would these sessions clash with the chosen sections of the rest of the plan? */
@@ -197,8 +197,7 @@ export interface PlanSummary {
   clashes: number;
 }
 
-export function summarise(plan: Plan, dataset: TermDataset): PlanSummary {
-  const { count, items } = planClashes(plan, dataset);
+export function summarise(plan: Plan, dataset: TermDataset, { count, items } = planClashes(plan, dataset)): PlanSummary {
   const starts = items.map((i) => i.session.start).sort((a, b) => toMinutes(a) - toMinutes(b));
   return {
     credits: planCodes(plan, dataset).reduce((sum, c) => sum + dataset.modules[c].credits, 0),
@@ -208,15 +207,15 @@ export function summarise(plan: Plan, dataset: TermDataset): PlanSummary {
   };
 }
 
-/** One line per module: "INF1107 LEC ALL · LAB P3 · QUIZ Q1". */
-export function sectionListLines(plan: Plan, dataset: TermDataset): { code: string; line: string }[] {
+/** One row per module, with labels shared by the section chips and the copied list. */
+export function sectionListRows(plan: Plan, dataset: TermDataset) {
   return planCodes(plan, dataset).map((code) => {
     const mod = dataset.modules[code];
-    const parts = lessonTypesOf(mod)
-      .map((t) => chosenSection(plan, mod, t))
-      .filter((s): s is Section => Boolean(s))
-      .map((s) => `${s.lessonType} ${s.id}`);
-    return { code, line: `${code} ${parts.join(" · ")}` };
+    const sections = lessonTypesOf(mod).flatMap((type) => {
+      const section = chosenSection(plan, mod, type);
+      return section ? [shortLabel(section.lessonType, section.id)] : [];
+    });
+    return { code, color: plan.colors[code] ?? "slate", sections };
   });
 }
 

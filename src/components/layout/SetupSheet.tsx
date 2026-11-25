@@ -8,6 +8,7 @@ import TextInput from "@/components/ui/TextInput";
 import { useToast } from "@/components/ui/Toast";
 import { OFFLINE_MESSAGE, useIsOnline } from "@/hooks/use-online";
 import { planActions, usePlanState } from "@/hooks/use-plan";
+import { MOCK_TERM } from "@/lib/mock/dataset";
 import { lookupMockShare } from "@/lib/mock/shares";
 import type { Plan, SharePayload } from "@/lib/schemas/plan";
 
@@ -16,7 +17,7 @@ const INTAKES = [
   { value: "AY26", label: "AY26" },
 ];
 // Only terms with a published dataset are listed (design.md §7).
-const TERMS = [{ value: "Y1T2", label: "Y1T2 · Upcoming" }];
+const TERMS = [{ value: MOCK_TERM.term, label: `${MOCK_TERM.term} · Upcoming` }];
 
 const INVALID_CODE = "That code doesn't match a saved plan. Check it and try again.";
 
@@ -53,14 +54,14 @@ function SetupFields({ plan, submitLabel, large, shareInput, onDone }: SetupForm
   const online = useIsOnline();
   const codeId = useId();
   const [intake, setIntake] = useState(plan.intake);
-  const [term, setTerm] = useState(plan.term);
+  const [term, setTerm] = useState<string>(TERMS.find(({ value }) => value === plan.term)?.value ?? TERMS[0].value);
   const [code, setCode] = useState(shareInput ?? "");
   const [linkedPlan] = useState(() => shareInput == null ? null : lookupMockShare(shareInput));
   const [codeError, setCodeError] = useState(shareInput != null && !linkedPlan ? INVALID_CODE : undefined);
   const importedLink = useRef(false);
 
-  const loadShared = useCallback((payload: SharePayload, fromLink: boolean) => {
-    planActions.loadShared(payload);
+  const loadShared = useCallback(async (payload: SharePayload, fromLink: boolean) => {
+    await planActions.loadShared(payload);
     toast("Plan loaded from share code");
     onDone(fromLink);
   }, [onDone, toast]);
@@ -68,12 +69,12 @@ function SetupFields({ plan, submitLabel, large, shareInput, onDone }: SetupForm
   useEffect(() => {
     if (!online || !linkedPlan || importedLink.current) return;
     importedLink.current = true;
-    loadShared(linkedPlan, true);
+    void loadShared(linkedPlan, true);
   }, [linkedPlan, loadShared, online]);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    planActions.setSetup(intake, term);
+    await planActions.setSetup(intake, term);
     onDone();
   }
 
@@ -85,7 +86,7 @@ function SetupFields({ plan, submitLabel, large, shareInput, onDone }: SetupForm
       setCodeError(INVALID_CODE);
       return;
     }
-    loadShared(payload, false);
+    void loadShared(payload, false);
   }
 
   return (

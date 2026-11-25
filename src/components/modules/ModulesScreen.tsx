@@ -5,9 +5,10 @@ import AutoPickMenu from "@/components/modules/AutoPickMenu";
 import ModuleCard from "@/components/modules/ModuleCard";
 import WeekPreview from "@/components/modules/WeekPreview";
 import Banner from "@/components/ui/Banner";
+import { useIsDesktop } from "@/hooks/use-desktop";
 import { usePlan } from "@/hooks/use-plan";
-import { MOCK_DATASET } from "@/lib/mock/dataset";
-import { curriculumCodes, planCodes, summarise } from "@/lib/plan";
+import { MOCK_DATASET, MOCK_TERM } from "@/lib/mock/dataset";
+import { curriculumCodes, planClashes, planCodes, summarise } from "@/lib/plan";
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -29,9 +30,11 @@ function Stat({ label, value, alert }: { label: string; value: string; alert?: b
 
 export default function ModulesScreen() {
   const plan = usePlan();
+  const desktop = useIsDesktop();
   const dataset = MOCK_DATASET;
   const groups = curriculumCodes(plan, dataset);
-  const summary = summarise(plan, dataset);
+  const clashes = planClashes(plan, dataset);
+  const summary = summarise(plan, dataset, clashes);
   const listed = new Set(groups ? [...groups.choice, ...groups.fixed, ...groups.optional] : []);
   const added = planCodes(plan, dataset).filter((code) => !listed.has(code));
   const card = (code: string, removable = false) => (
@@ -85,7 +88,9 @@ export default function ModulesScreen() {
         {dataset.version}.
       </p>
       </div>
-      <WeekPreview plan={plan} dataset={dataset} />
+      {desktop && plan.term === MOCK_TERM.term ? (
+        <WeekPreview items={clashes.items} count={clashes.count} selectedWeek={plan.week} calendar={dataset.calendar} />
+      ) : null}
     </div>
   );
 }

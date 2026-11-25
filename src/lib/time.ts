@@ -4,13 +4,6 @@ export function toMinutes(time: string): number {
   return h * 60 + m;
 }
 
-/** 570 → "09:30". */
-export function fromMinutes(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
-}
-
 /** 90 → "1h 30m", 120 → "2h", 45 → "45m". */
 export function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
