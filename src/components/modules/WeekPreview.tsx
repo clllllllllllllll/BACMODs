@@ -27,7 +27,7 @@ export default function WeekPreview({ items, count, selectedWeek, calendar }: {
         </h2>
         <ClashStatus count={count} />
       </div>
-      <WeekSwitcher calendar={calendar} week={week} onChange={planActions.setWeek} />
+      <WeekSwitcher calendar={calendar} week={week} onStep={planActions.stepWeek} />
       <WeekView items={inWeek} allItems={items} showSaturday={hasSaturday(items)} />
     </aside>
   );

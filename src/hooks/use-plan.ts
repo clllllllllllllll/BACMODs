@@ -261,8 +261,12 @@ export const planActions = {
   setView(view: Plan["view"]) {
     return editDisplayed((plan) => plan.view === view ? plan : { ...plan, view });
   },
-  setWeek(week: number) {
-    return editDisplayed((plan) => plan.week === week ? plan : { ...plan, week });
+  stepWeek(step: -1 | 1) {
+    return editDisplayed((plan) => {
+      const lastWeek = MOCK_DATASET.calendar.teachingWeeks;
+      const week = Math.min(plan.week, lastWeek) + step;
+      return week < 1 || week > lastWeek ? plan : { ...plan, week };
+    });
   },
   loadShared(payload: SharePayload) {
     return changePlan(payload, (plan) => ({ ...plan, ...payload }), true);

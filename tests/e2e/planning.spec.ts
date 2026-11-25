@@ -102,8 +102,8 @@ test("an unsupported saved term shows a setup path and no sample timetable", asy
     }));
   });
   await page.goto("/timetable");
-  const warning = page.getByRole("alert");
-  await expect(warning).toContainText("Timetable for Y1T3 isn't out yet");
+  const warning = page.getByRole("alert").filter({ hasText: "Timetable for Y1T3 isn't out yet" });
+  await expect(warning).toBeVisible();
   await expect(page.getByRole("group", { name: "Week timetable" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Next week" })).toHaveCount(0);
   await page.getByRole("link", { name: "Modules" }).click();
@@ -139,10 +139,10 @@ test("day tabs keep the selected weekday across weeks and support keyboard navig
   await page.keyboard.press("Tab");
   await expect(panel).toBeFocused();
 
-  await nextWeek.click();
-  await expect(page.getByText("Week 2", { exact: true })).toBeVisible();
+  await nextWeek.dblclick();
+  await expect(page.getByText("Week 3", { exact: true })).toBeVisible();
   await expect(tuesday).toHaveAttribute("aria-selected", "true");
-  await expect(tuesday).toHaveAccessibleName("Tuesday 19 Jan");
+  await expect(tuesday).toHaveAccessibleName("Tuesday 26 Jan");
   await expect(panel.getByText("INF1107", { exact: true })).toBeVisible();
 
   await tuesday.press("End");

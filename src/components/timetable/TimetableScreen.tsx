@@ -60,7 +60,7 @@ export default function TimetableScreen() {
         />
       </div>
       <ClashStatus count={count} />
-      <WeekSwitcher calendar={dataset.calendar} week={week} onChange={planActions.setWeek} />
+      <WeekSwitcher calendar={dataset.calendar} week={week} onStep={planActions.stepWeek} />
       {view === "day" ? (
         <DayView items={inWeek} week={week} calendar={dataset.calendar} showSaturday={saturday} />
       ) : (

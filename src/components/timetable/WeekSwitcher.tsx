@@ -7,11 +7,11 @@ import type { TermCalendar } from "@/lib/schemas/dataset";
 export default function WeekSwitcher({
   calendar,
   week,
-  onChange,
+  onStep,
 }: {
   calendar: TermCalendar;
   week: number;
-  onChange: (week: number) => void;
+  onStep: (step: -1 | 1) => void;
 }) {
   const btn =
     "focus-ring flex size-9 items-center justify-center rounded-control border border-line bg-card text-fg disabled:opacity-40";
@@ -22,7 +22,7 @@ export default function WeekSwitcher({
         className={btn}
         aria-label="Previous week"
         disabled={week <= 1}
-        onClick={() => onChange(week - 1)}
+        onClick={() => onStep(-1)}
       >
         <Icon name="chevron-left" />
       </button>
@@ -38,7 +38,7 @@ export default function WeekSwitcher({
         className={btn}
         aria-label="Next week"
         disabled={week >= calendar.teachingWeeks}
-        onClick={() => onChange(week + 1)}
+        onClick={() => onStep(1)}
       >
         <Icon name="chevron-right" />
       </button>
