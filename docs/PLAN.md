@@ -1,6 +1,6 @@
 # BACMODS — Project Plan
 
-_Last updated: 2026-11-24_
+_Last updated: 2026-11-25_
 
 ## 1. What we're building
 
@@ -35,8 +35,9 @@ Notes and decisions:
   become a new version (see "Versions" below).
 - **Versions:** sections can change after release, so every import is a new, unpublished version.
   Publishing a new version replaces the old one for that term. The app shows the dataset version and
-  date. If a student's saved section no longer exists in the new version, flag it on their
-  timetable rather than dropping it silently.
+  date. If a selected section changes time or venue, keep it selected and flag the change.
+  If it disappears, retain the original pick, mark it as removed and let the student choose
+  a replacement. Preserve their other picks in both cases.
 - **Intake decides curriculum:** a student who entered in AY2025 follows the AY2025 structure even
   when taking classes in AY2026. Setup must ask for intake AY, not just current AY.
 - **Calendar:** encode each trimester as `{ ay, trimester, week1Monday, recessWeeks[], holidays[] }`
@@ -57,7 +58,7 @@ Notes and decisions:
 | Schema / validation | Zod | One schema shared by importer (validate before insert), server (parse the jsonb) and client (parse share payloads) |
 | Importer | exceljs | Reads the APA `.xlsx` |
 | Data / hosting | Supabase (cloud) + Vercel | |
-| Tests | Vitest (logic), Playwright (key flows on a 390 px viewport) | |
+| Tests | Vitest (logic), Playwright (key flows at 390, 768, 1024 and 1440 px) | |
 | Design | `design.md` | Single source of truth. Figma is a visual reference for layout and flows, not kept in sync |
 
 ## 4. Architecture
@@ -84,8 +85,10 @@ calendar/<AY>.json ─┘          │
 - **Server:** `src/lib/supabase/server.ts` reads with the secret key (never shipped to the browser).
   Term data is fetched in a cached function tagged `dataset:<ay>-<tri>`, which `/api/revalidate`
   invalidates. The browser only ever receives the joined, published payload.
-- **Client state:** no accounts for MVP. The plan lives in localStorage ("Switching keeps your current
-  plan saved on this device", per the design).
+- **Client state:** no accounts for MVP. Plans are saved per programme, intake and trimester in
+  localStorage without an automatic expiry. When a dataset is published for a new trimester,
+  prompt the student to start a plan for it. They can keep using their current plan or switch
+  and return to it later with their picks intact.
 - **Share codes:** the design uses short codes like `BACMODS-7KQ2X`, which are too short to carry a
   plan, so they need server storage: a `share_codes` table (code → programme, intake, term, dataset
   version, selections; no personal data) written by a Next.js route handler with rate limiting.
@@ -121,20 +124,23 @@ on mock data, so the UI isn't waiting on the real APA file.
 
 ### S1 — Frontend shell (start now, mock data)
 - [x] Install Node.js LTS and `npm install`
-- [ ] Run in Docker until Vercel details are available: multi-stage `Dockerfile` building Next.js with
-  `output: "standalone"`, `.dockerignore` (excludes `node_modules`, `.next`, `.env*`, data files),
-  and `compose.yaml` serving on `localhost:3000`. `output: "standalone"` doesn't affect a later
-  Vercel deploy.
-- [ ] Tokens from `design.md` into Tailwind `@theme`: colours, type scale, radii, shadows; Inter via
+- [x] Run in Docker with a multi-stage `Dockerfile` building Next.js with `output: "standalone"`
+  and `compose.yaml` serving on `localhost:3000`. `.dockerignore` excludes dependency and build
+  output, private environment files, data files and importer output from the build context.
+- [x] Tokens from `design.md` into Tailwind `@theme`: colours, type scale, radii, shadows; Inter via
   `next/font`
-- [ ] UI primitives: `Button`, `Chip`, `SelectField`, `TextInput`, `Banner`, `Toast`, status badge,
+- [x] UI primitives: `Button`, `Chip`, `SelectField`, `TextInput`, `Banner`, `Toast`, status badge,
   segmented control, bottom sheet
-- [ ] Layout: `Header` + `ContextPill` (BAC · AY26 · Y1T2), `TabBar` (Timetable → Modules → Export)
-- [ ] All four screens rendered from a typed mock dataset matching the prototype (INF1105, INF1107,
+- [x] Layout: `Header` + `ContextPill` (BAC · AY26 · Y1T2), `TabBar` (Timetable → Modules → Export)
+- [x] All four screens rendered from a typed mock dataset matching the prototype (INF1105, INF1107,
   INF2008, AAI1001, INF2006, BAC4000A)
-- [ ] Mobile-first: content column max 390–480 px, centred on wider screens; desktop layout later
-- [ ] Playwright smoke test at 390 px: setup → modules → timetable → export, run against the
-  Docker container
+- [x] Mobile, tablet and desktop layouts follow `design.md` §4
+- [x] Require a saved plan, completed Setup or a valid share import before opening a planner page.
+  After Setup, return the student to the page they originally requested.
+- [x] Playwright smoke and regression tests at 390, 768, 1024 and 1440 px against the Docker image
+  built from the checked-out commit. The smoke flow covers setup → modules → timetable → export.
+- [x] Run axe accessibility checks on all four screens, both timetable views, the Setup sheet
+  and the Share dialog at 390 and 1440 px.
 - **Done when:** `docker compose up --build` serves a shell that clicks through like the Figma prototype,
   with tokens and states as specified in `design.md`. Deploying to Vercel moves to M7.
 
@@ -172,7 +178,9 @@ on mock data, so the UI isn't waiting on the real APA file.
 - [ ] `AddModuleSearch` for modules not in the curriculum (Addable / Clash / In plan)
 - [ ] `ModuleCard` / `ClassRow` / `SectionOption`: pick a section per lesson type
 - [ ] Selection state ↔ URL ↔ localStorage; selections carry the dataset version they were made on
-- [ ] Section missing after a new version is published → `Banner` asks the student to re-pick
+- [ ] When a new trimester becomes available, offer to start a separate plan for it
+- [ ] Flag changed or removed sections after a dataset update and retain saved picks until the
+  student changes them
 - **Done when:** a student can set up and end with every lesson type assigned a section.
 
 ### M4 — Timetable and clashes
@@ -207,6 +215,7 @@ on mock data, so the UI isn't waiting on the real APA file.
 - [ ] Banner: "unofficial, verify in the registration system", plus dataset version/date
 
 ### Later (post-registration)
+- [ ] Reopen the last saved plan and timetable offline after leaving the app
 - Entra ID login once approved; saved timetables per user
 - Programmes beyond BAC (curriculum JSON + programme picker)
 - Student-facing "what changed" view between dataset versions ("your class moved")
@@ -215,7 +224,8 @@ on mock data, so the UI isn't waiting on the real APA file.
 
 - Unit tests (Vitest) for: xlsx parsing, code normalisation, join report, clash detection, auto-pick,
   .ics generation, share-code parsing. These are where bugs would hurt students.
-- Playwright for the main flows at 390 px, plus an automated accessibility check (axe).
+- Playwright for the main flows at phone, tablet and desktop widths. The axe checks fail on
+  serious or critical accessibility violations.
 - Zod schemas are the contract: importer output, stored jsonb and share payloads all go through them.
 - Only synthetic fixtures in the repo.
 - Manual check of the real import before each publish.

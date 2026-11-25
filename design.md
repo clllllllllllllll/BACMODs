@@ -101,7 +101,28 @@ The file defines spacing on auto-layout frames. **Use 4 px as a working base** f
 - **Controls.** The base Button is 36 px high with 16 px side padding and an 8 px radius. The first-visit primary action is taller. Text input is 40 px high before helper text. Context pill is 32 px high with an 8 px radius. Intake and Trimester share a row with a 12 px gap.
 - **Timetable.** Day tab is 44 px high with a 10 px radius. Week block uses a 6 px radius and a 1 px internal gap. Free gap has a 56 px leading inset to align with the event column.
 - **Radii by shape.** The sheet handle uses 2 px, chips 4 px, the clash outline 7 px and Setup sheet 12 px. Share sheet has 16 px top corners and square bottom corners. Status badges use 999 px for a full pill.
-- **Desktop recommendation.** Keep the first-visit form compact, including the paired Intake and Trimester fields. Give additional width to the week grid and long module names. Keep the same tab order and preserve the Day view as an alternative. Choose the layout breakpoint where the actual labels and grid fit.
+- **Wider screens.** The phone layout above is the base. How it grows is specified in *Responsive layout* below.
+
+### Responsive layout
+
+One set of components serves every width. Breakpoints are the Tailwind defaults, and the layout changes only at these two:
+
+| Width | Name | Layout |
+| --- | --- | --- |
+| below 768 px | Phone | Exactly the layout described above: one column, up to 480 px wide and centred, Header with the tab bar as a second row. |
+| 768–1023 px | Tablet | The same single column, capped at 720 px and centred. The Header and tab bar keep the phone arrangement. Extra width goes to the week grid and to long module names. |
+| 1024 px and up | Desktop | Described below. |
+
+**Desktop (1024 px and up)**
+
+- **Header.** Spans the full width, with its content capped at 1280 px and centred, 24 px side padding. One row: wordmark, then the Timetable · Modules · Export tabs, then the context pill at the right. The separate tab row is not shown. The tab order, active blue text and underline are unchanged.
+- **Content.** Capped at 1280 px and centred, 24 px side padding, on the page background.
+- **Timetable.** The week grid uses the full content width. Week is the default view, until the student picks Day or Week, which is then remembered. Day view stays available with the same Day / Week control.
+- **Modules.** Two columns with a 24 px gap. The left column (26–30 rem wide, 416–480 px) holds the summary, Auto-pick, module cards and Add a module. The right column is a live week preview: the week switcher and the same week grid as the Timetable screen, sticky at the top of the viewport while the left column scrolls. Picking a section updates the preview at once, and clashes show there with the same outline and icon. The preview is not shown below 1024 px.
+- **Export.** Two columns: the section list on the left, the export tiles (calendar, share code) on the right.
+- **Setup.** Stays a compact centred card, 480 px wide, on the page background, with its own white surface, 12 px radius and 1 px border.
+- **Sheets.** The Setup sheet and Share sheet open as centred dialogs, 480 px wide at most, with 12 px radius (16 px for the Share sheet) on all four corners and no drag handle. They keep the same content, scrim, focus trap and Escape behaviour.
+- **Hover.** The hover states in §7 apply on desktop.
 
 ## 5. Depth and Motion
 
@@ -128,9 +149,14 @@ The Components page contains **42 named components and component sets**, countin
 
 ## 7. States
 
+On a first visit to any planner page, open Setup before showing the timetable, module choices
+or export controls. After the student confirms their programme, intake and trimester or loads
+a valid share code, return to the requested page. A saved plan or a valid share link supplies
+the setup automatically. Starting from the home page opens Modules after setup.
+
 | State | Source treatment and implementation guidance |
 | --- | --- |
-| Hover | **Desktop recommendation.** On an available menu row or secondary button, use the page-gray fill. Keep a selected tab’s underline in place on pointer entry. Expose every action to touch and keyboard users. |
+| Hover | **Applies on desktop (1024 px and up) and wherever a pointer hovers.** On an available menu row or secondary button, use the page-gray fill. Keep a selected tab’s underline in place on pointer entry. Expose every action to touch and keyboard users. |
 | Focus and open | Focused Text input and open Select field use a white fill, primary-blue stroke and Focus/Ring. **Recommendation:** apply the ring on keyboard focus for buttons, tabs and section choices, and restore focus to the trigger when a menu or sheet closes. |
 | Pressed | The primary Button uses 85% opacity. The secondary Button changes to the page-gray fill. Both retain their dimensions. |
 | Disabled | Both Button types use 40% opacity. Disabled Select field keeps its label, uses a page-gray box, default border and tertiary value text. Use the native disabled state where available. |
@@ -143,10 +169,11 @@ The following states are not drawn in Figma. Build them from existing components
 | State | Treatment |
 | --- | --- |
 | Loading | Keep the Header and Tab bar in place. Show page-gray placeholder blocks in the shape of the cards or the timetable grid. No spinner for loads under about 300 ms. |
-| No dataset for the chosen term | On Setup, the Trimester select lists only terms with a published dataset. If a saved plan points at a term with none, show a warning Banner: "Timetable for Y1T3 isn't out yet" with a link back to Setup. |
-| New dataset version | Info Banner on the Modules and Timetable screens: "Timetable updated on [date]". If a chosen section no longer exists, its Class row shows the warning pair and "Section removed — pick again". |
+| No dataset for the chosen term | On Setup, the Trimester select lists only terms with a published dataset. If a saved plan points at a term with none, show a warning Banner: "Timetable for Y1T3 isn't out yet" with a "Go to setup" link. |
+| New dataset version | Info Banner on the Modules and Timetable screens: "Timetable updated on [date]". If a chosen section no longer exists, its Class row shows the warning pair and "Section removed — pick again" when alternatives exist, or "No sections available" when the lesson type has no sections. |
 | Offline | The last loaded plan and dataset stay usable. Show a Toast "You're offline. Showing saved timetable". Share code import and Copy share code are disabled with that reason in the helper text. |
 | Invalid share code | Covered by the Text input Error state. Message: "That code doesn't match a saved plan. Check it and try again." |
+| Curriculum unavailable | Show an Info Banner on Modules: "Curriculum for AY25 · Y1T2 is unavailable. You can still add modules below." Use the current intake and term. Keep module search available. |
 | No modules this term | Modules screen shows the empty Optional card treatment ("No optional modules in Y1T2.") for each empty group. |
 | Saturday classes | Day tabs show Mon–Fri. Add a Sat tab, and a Sat column in Week view, only when the plan has a Saturday session that term. |
 
@@ -168,9 +195,28 @@ Class rows use the full name with a section ("Laboratory · pick one", "Quiz · 
 ## 9. Rules
 
 - Keep programme, intake and trimester together in the header context control so users can check which plan they are viewing.
-- Preserve the navigation order **Timetable → Modules → Export** and keep the active destination visible in each view.
+- Preserve the navigation order **Timetable → Modules → Export** and keep the active destination visible in each view, in every layout (a second row on phone and tablet, in the Header on desktop).
+- Give the schedule more room before changing anything else as the screen widens. Don't shrink instructional text to make a wider layout fit (see the last rule).
 - Carry a module’s assigned accent and code across chips, day events and week blocks. The library provides six color variants for those components. Slate is an additional paint pair. Assign colours as described under Module colour assignment.
 - Use the text tokens for any accent-coloured text. Never set readable text in `text/tertiary`.
 - Keep the fixed lecture and the selectable tutorial or lab visually distinct. Show the class type, section, time and venue close together when a choice can change the schedule.
 - Reserve heavier elevation for overlays. Use the existing dividers and outlines to separate ordinary rows and cards.
 - Avoid shrinking instructional text to timetable Micro sizes to fit a wider or narrower layout. Let labels wrap and give the schedule more room first.
+
+## 10. Shell copy
+
+Wording added while building the S1 shell on mock data, where §7 has no string for the case. Replace it when the prototype text is available.
+
+| Where | Copy |
+| --- | --- |
+| Setup heading and intro | "Plan your BAC timetable" · "Choose your intake and trimester, pick a section for each class and spot clashes before you register." |
+| Setup primary action | "Start planning" |
+| Setup sheet title and action | "Your plan" · "Update plan" |
+| Share code import | Field "Share code", placeholder "BACMODS-XXXXX", action "Load plan", success Toast "Plan loaded from share code" |
+| Disclaimer (Setup, Modules) | "Unofficial planning tool. Check the registration system before you register." The shell adds "Sample data · version mock-1" while only mock data exists |
+| Sample-data Banner (Info, Modules) | "Showing sample timetable data. Real timetables arrive in a later update." Remove when real data lands |
+| Auto-pick (until built) | Toast "Auto-pick is coming soon. Your sections were not changed." |
+| Calendar tile (until built) | Toast "Calendar export is coming soon." |
+| Clash status | OK: "OK: no clashes" · Clash: "Clash: 1 overlap in your plan" (plural "overlaps") |
+| Empty day | "No classes on Monday this week." |
+| Copy actions | "Section list copied" · "Share code copied" · "Link copied" · failure "Couldn't copy. Select the text and copy it yourself." |

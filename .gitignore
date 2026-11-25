@@ -49,3 +49,7 @@ next-env.d.ts
 /importer/out/
 /supabase/.temp/
 /supabase/.branches/
+
+# playwright
+/test-results/
+/playwright-report/

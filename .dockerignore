@@ -1,0 +1,24 @@
+**/node_modules
+.next
+.git
+.github
+.claude
+.vscode
+.vercel
+Dockerfile
+compose.yaml
+.dockerignore
+npm-debug.log*
+
+# Secrets and real data never go into an image (see docs/AGENT_GUIDE.md §3)
+**/.env*
+!.env.example
+**/data
+**/importer/out
+**/*.xlsx
+**/*.xls
+**/*.csv
+supabase/.temp
+test-results
+playwright-report
+*.tsbuildinfo
