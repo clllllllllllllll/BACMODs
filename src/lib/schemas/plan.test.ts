@@ -17,8 +17,9 @@ describe("parsePlan", () => {
     expect(parsePlan(JSON.stringify(plan))).toEqual(plan);
   });
 
-  it("returns undefined for an extra field", () => {
-    expect(parsePlan(JSON.stringify({ ...plan, unexpected: true }))).toBeUndefined();
+  it("loads the saved plan and drops an unknown field", () => {
+    const stored = JSON.stringify({ ...plan, datasetVersion: "synthetic-v2" });
+    expect(parsePlan(stored)).toStrictEqual(plan);
   });
 
   it("returns undefined for a missing field", () => {

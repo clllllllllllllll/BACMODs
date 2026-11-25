@@ -32,6 +32,11 @@ describe("lookupShare", () => {
     expect(lookupShare(code, JSON.parse(JSON.stringify(records)))).toEqual(payload);
   });
 
+  it("loads the share payload and drops an unknown field", () => {
+    const record = { ...records[code], payload: { ...payload, datasetVersion: "synthetic-v2" } };
+    expect(lookupShare(code, { [code]: record })).toStrictEqual(payload);
+  });
+
   it("rejects tampered and truncated codes", () => {
     expect(lookupShare("BACMODS-ZZ998", records)).toBeNull();
     expect(lookupShare("BACMODS-ZZ99", records)).toBeNull();

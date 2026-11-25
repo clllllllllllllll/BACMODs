@@ -7,7 +7,8 @@ export const ModuleColorSchema = z.enum(MODULE_COLORS);
 /** moduleCode → lessonType → section id. */
 export const SelectionSchema = z.record(z.string(), z.record(z.string(), z.string()));
 
-export const PlanSchema = z.strictObject({
+/** Drop unknown fields so older tabs can still read saved plans and share codes after schema additions. */
+export const PlanSchema = z.object({
   programme: z.literal("BAC"),
   /** Intake academic year, e.g. "AY26". */
   intake: z.string(),
