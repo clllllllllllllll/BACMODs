@@ -23,4 +23,9 @@ describe("sessionsClash", () => {
   it("does not flag different days", () => {
     expect(sessionsClash(s(1, "09:00", "11:00", [1]), s(2, "09:00", "11:00", [1]))).toBe(false);
   });
+  it("flags an overlapping Saturday session only against another Saturday session", () => {
+    const saturday = s(6, "09:00", "11:00", [1]);
+    expect(sessionsClash(saturday, s(6, "10:00", "12:00", [1]))).toBe(true);
+    expect(sessionsClash(saturday, s(5, "10:00", "12:00", [1]))).toBe(false);
+  });
 });

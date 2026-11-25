@@ -49,9 +49,17 @@ describe("plan", () => {
   it("distinguishes an unavailable curriculum from an available one with no optional modules", () => {
     const earlier = makeInitialPlan(MOCK_DATASET, "AY25", "Y1T2");
     expect(curriculumCodes(earlier, MOCK_DATASET)).toBeNull();
+    expect(curriculumCodes({ ...plan(), term: "Y1T3" }, MOCK_DATASET)).toBeNull();
     expect(curriculumCodes(plan(), MOCK_DATASET)?.optional).toEqual([]);
     expect(planCodes(earlier, MOCK_DATASET)).toEqual([]);
-    expect(planCodes({ ...earlier, added: ["INF1105"] }, MOCK_DATASET)).toEqual(["INF1105"]);
+    expect(planCodes({ ...earlier, added: ["TESTMISSING001", "INF1105"] }, MOCK_DATASET)).toEqual(["INF1105"]);
+  });
+  it("finds the same curriculum for AY26 and AY2026", () => {
+    const shortIntake = plan();
+    const longIntake = { ...shortIntake, intake: "AY2026" };
+    const groups = curriculumCodes(shortIntake, MOCK_DATASET);
+    expect(groups).not.toBeNull();
+    expect(curriculumCodes(longIntake, MOCK_DATASET)).toEqual(groups);
   });
   it("wraps the colour order from the eighth module", () => {
     expect(nextColor(["blue", "purple", "green", "orange", "pink", "teal", "slate"])).toBe("blue");
