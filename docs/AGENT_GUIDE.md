@@ -25,32 +25,56 @@ If your change makes one of these wrong, update it in the same change and say so
 
 ## 2. Environment and commands
 
-Windows 10, PowerShell, Node.js LTS, npm. Supabase runs locally in Docker; the app deploys to Vercel.
+Windows 10, PowerShell, Node.js LTS, npm. Supabase runs locally in Docker. The app deploys to Vercel.
 
 | Command | Does |
 | --- | --- |
+| `npm ci` | Install dependencies from `package-lock.json` |
 | `npm run dev` | Next.js dev server |
 | `npm run build` | Production build |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run test` | Vitest (pure logic in `src/lib/`) |
 | `docker compose up --build -d` | Serve the app on `localhost:3000` from the Docker image (`docker compose down` stops it) |
-| `npm run test:e2e` | Playwright flows at 390, 768, 1024 and 1440 px against `localhost:3000`; start the container first, or set `PLAYWRIGHT_BASE_URL` |
+| `npx playwright install chromium` | Install Chromium for Playwright |
+| `npm run test:e2e` | Playwright flows at 390, 768, 1024 and 1440 px. Start the container at `localhost:3000` or set `PLAYWRIGHT_BASE_URL`. |
 | `npm run db:start` / `db:stop` | Local Supabase (needs Docker Desktop) |
 | `npm run db:reset` | Recreate local DB from migrations + `supabase/seed.sql` |
 
-Planned, add them when the tooling lands: `import` / `publish` / `diff` (importer CLI).
+The importer CLI will add the `import`, `publish` and `diff` commands.
+
+Run the CI checks locally.
+
+```powershell
+npm ci
+npm run lint
+npm run typecheck
+npm run test
+npm run build
+```
 
 For S1 acceptance, pass the checked-out commit to the image build and enable the Playwright check
 that compares the page's `bacmods-git-commit` metadata with `git rev-parse HEAD`.
 
 ```powershell
+npx playwright install chromium
 $env:BACMODS_GIT_COMMIT = git rev-parse HEAD
 docker compose up --build -d
+curl.exe --fail --silent --show-error --output NUL --max-time 3 --retry 30 --retry-delay 1 --retry-max-time 90 --retry-all-errors http://localhost:3000/
 $env:PLAYWRIGHT_EXPECT_BUILD = '1'
 npm run test:e2e
 docker compose down
 ```
+
+GitHub Actions runs `checks` on pull requests and pushes to `main`, then runs `e2e` after `checks`
+passes. Both jobs use Node.js 24, cache npm downloads and check out the event SHA. On a pull request,
+that SHA identifies GitHub's test merge commit, so the Docker image stamp and Playwright's expected
+revision match. The browser job waits for HTTP readiness and uploads available reports and traces
+on failure. [CI workflow](../.github/workflows/ci.yml)
+
+The pull-request guards run Gitleaks and check changed paths against the data and environment-file
+rules below. Dependabot checks npm dependencies and GitHub Actions weekly.
+[Guard workflow](../.github/workflows/guards.yml) · [Dependabot configuration](../.github/dependabot.yml)
 
 ## 3. Hard rules
 
@@ -148,6 +172,7 @@ Before saying a task is finished:
    relevant. Say what you checked and what you couldn't.
 4. The matching checkbox in `docs/PLAN.md` is ticked.
 5. Report honestly: if something fails or wasn't verified, say so.
+6. `checks`, `e2e` and the pull-request guards must pass before merging.
 
 ## 9. Git
 

@@ -45,8 +45,8 @@ Notes and decisions:
 - **Code normalisation:** normalise codes before joining (trim, uppercase, strip spaces). The importer
   must print a **join report**: APA codes with no curriculum entry, and curriculum modules with no
   APA classes this term. Never silently drop rows.
-- **Real APA data stays out of git** (`supabase/seed.sql` is synthetic only). Commit a small
-  synthetic APA-shaped `.xlsx` fixture for tests.
+- **Real APA data stays out of git** (`supabase/seed.sql` is synthetic only). Importer tests
+  generate a small, synthetic APA-shaped workbook in a temporary directory.
 
 ## 3. Tech stack
 
@@ -141,6 +141,10 @@ on mock data, so the UI isn't waiting on the real APA file.
   built from the checked-out commit. The smoke flow covers setup → modules → timetable → export.
 - [x] Run axe accessibility checks on all four screens, both timetable views, the Setup sheet
   and the Share dialog at 390 and 1440 px.
+- [x] Configure GitHub Actions for lint, typecheck, Vitest, production builds and Docker-backed
+  Playwright. Add pull-request guards for secrets and private data paths, plus weekly Dependabot
+  updates for npm and GitHub Actions.
+- [ ] Verify the CI and guard jobs on the first GitHub pull request with these workflows.
 - **Done when:** `docker compose up --build` serves a shell that clicks through like the Figma prototype,
   with tokens and states as specified in `design.md`. Deploying to Vercel moves to M7.
 
@@ -156,7 +160,7 @@ on mock data, so the UI isn't waiting on the real APA file.
 ### M1 — Data pipeline
 - [ ] Types in `src/lib/types.ts`; config/env parsing in `src/lib/config.ts`
 - [ ] Importer: xlsx parse → normalise → join → validate → join report
-- [ ] Synthetic `.xlsx` fixture + tests for parsing and the join report
+- [ ] Generate a synthetic `.xlsx` fixture during tests for parsing and the join report
 - [ ] Yearly file → split into T1/T2/T3; trimester file → single term (fixture for each)
 - [ ] Insert unpublished version; `publish` command; seed synthetic dataset into `seed.sql`
 - [ ] `diff` command: what changed between two versions of a term (sections added/removed/moved),
