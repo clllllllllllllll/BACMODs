@@ -134,6 +134,8 @@ on mock data, so the UI isn't waiting on the real APA file.
 - [x] Mobile, tablet and desktop layouts follow `design.md` §4
 - [x] Playwright smoke and regression tests at 390, 768, 1024 and 1440 px against the Docker image
   built from the checked-out commit. The smoke flow covers setup → modules → timetable → export.
+- [x] Run axe accessibility checks on all four screens, both timetable views, the Setup sheet
+  and the Share dialog at 390 and 1440 px.
 - **Done when:** `docker compose up --build` serves a shell that clicks through like the Figma prototype,
   with tokens and states as specified in `design.md`. Deploying to Vercel moves to M7.
 
@@ -215,8 +217,8 @@ on mock data, so the UI isn't waiting on the real APA file.
 
 - Unit tests (Vitest) for: xlsx parsing, code normalisation, join report, clash detection, auto-pick,
   .ics generation, share-code parsing. These are where bugs would hurt students.
-- Playwright for the main flows at phone, tablet and desktop widths. An automated accessibility
-  check (axe) is planned.
+- Playwright for the main flows at phone, tablet and desktop widths. The axe checks fail on
+  serious or critical accessibility violations.
 - Zod schemas are the contract: importer output, stored jsonb and share payloads all go through them.
 - Only synthetic fixtures in the repo.
 - Manual check of the real import before each publish.
