@@ -1,10 +1,10 @@
-import AppFrame from "@/components/layout/AppFrame";
+import { SetupFrame } from "@/components/layout/AppFrame";
 import SetupScreen from "@/components/layout/SetupScreen";
 
 export default function SetupPage() {
   return (
-    <AppFrame withTabs={false}>
+    <SetupFrame>
       <SetupScreen />
-    </AppFrame>
+    </SetupFrame>
   );
 }

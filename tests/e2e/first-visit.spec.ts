@@ -1,5 +1,15 @@
 import { expect, test } from "@playwright/test";
 
+test.describe("before the browser reads the saved plan", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("Export renders the public header and withholds planner controls", async ({ page }) => {
+    await page.goto("/export");
+    await expect(page.getByRole("banner").getByRole("link", { name: "BACMODS" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Copy list" })).toHaveCount(0);
+  });
+});
+
 for (const path of ["/export", "/modules", "/timetable"]) {
   test(`a first visit to ${path} requires Setup, then restores the destination`, async ({ page }) => {
     const destination = path + "?from=bookmark#saved";

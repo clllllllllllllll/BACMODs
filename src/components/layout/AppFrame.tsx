@@ -1,4 +1,5 @@
 import Header from "@/components/layout/Header";
+import RequireSetup from "@/components/layout/RequireSetup";
 import { COLUMN } from "@/components/layout/column";
 import TabBar from "@/components/layout/TabBar";
 
@@ -6,7 +7,19 @@ import TabBar from "@/components/layout/TabBar";
  * Shared page shell. On phone and tablet the tab bar is a second row under the Header;
  * on desktop the tabs sit inside the Header. Setup keeps a compact column.
  */
-export default function AppFrame({ children, withTabs = true }: { children: React.ReactNode; withTabs?: boolean }) {
+export default function AppFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <RequireSetup>
+      <Frame withTabs>{children}</Frame>
+    </RequireSetup>
+  );
+}
+
+export function SetupFrame({ children }: { children: React.ReactNode }) {
+  return <Frame withTabs={false}>{children}</Frame>;
+}
+
+function Frame({ children, withTabs }: { children: React.ReactNode; withTabs: boolean }) {
   return (
     <div className="flex min-h-dvh flex-col bg-page">
       <Header showContext={withTabs} />

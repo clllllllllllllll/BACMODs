@@ -1,18 +1,17 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import Header from "@/components/layout/Header";
 import { usePlanState } from "@/hooks/use-plan";
 
-/** The root layout applies this to every planner page, including new routes. */
+/** Gate the contents of a planner page after Next.js has rendered its route segment. */
 export default function RequireSetup({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const router = useRouter();
   const { loaded, configured } = usePlanState();
-  const needsSetup = pathname !== "/" && !configured;
 
   useEffect(() => {
-    if (!loaded || !needsSetup) return;
+    if (!loaded || configured) return;
     const destination = new URL(window.location.href);
     const query = new URLSearchParams();
     const share = destination.searchParams.get("share");
@@ -22,7 +21,7 @@ export default function RequireSetup({ children }: { children: React.ReactNode }
     }
     query.set("next", destination.pathname + destination.search + destination.hash);
     router.replace(`/?${query}`);
-  }, [loaded, needsSetup, pathname, router]);
+  }, [loaded, configured, router]);
 
-  return needsSetup ? null : children;
+  return configured ? children : <Header showContext={false} />;
 }

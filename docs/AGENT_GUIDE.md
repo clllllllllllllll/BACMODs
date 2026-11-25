@@ -112,6 +112,9 @@ notices.
 
 ## 6. UI rules
 
+- Render planner pages inside `AppFrame` so first visits go through Setup. The public Setup
+  page uses `SetupFrame`. Keep the root layout's route slot unconditional so Next.js can
+  validate instant navigation for each page.
 - Use the tokens from `design.md` via Tailwind theme classes. No raw hex values, ad-hoc font sizes
   or one-off shadows in components.
 - Accent-coloured text uses the `*-text` tokens. Readable text is never `text/tertiary`.
