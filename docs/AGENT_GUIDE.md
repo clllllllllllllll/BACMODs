@@ -73,8 +73,7 @@ revision match. The browser job waits for HTTP readiness and uploads available r
 on failure. [CI workflow](../.github/workflows/ci.yml)
 
 The pull-request guards run Gitleaks and check changed paths against the data and environment-file
-rules below. Dependabot checks npm dependencies and GitHub Actions weekly.
-[Guard workflow](../.github/workflows/guards.yml) · [Dependabot configuration](../.github/dependabot.yml)
+rules below. [Guard workflow](../.github/workflows/guards.yml)
 
 ## 3. Hard rules
 
