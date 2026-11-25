@@ -35,8 +35,9 @@ Notes and decisions:
   become a new version (see "Versions" below).
 - **Versions:** sections can change after release, so every import is a new, unpublished version.
   Publishing a new version replaces the old one for that term. The app shows the dataset version and
-  date. If a student's saved section no longer exists in the new version, flag it on their
-  timetable rather than dropping it silently.
+  date. If a selected section changes time or venue, keep it selected and flag the change.
+  If it disappears, retain the original pick, mark it as removed and let the student choose
+  a replacement. Preserve their other picks in both cases.
 - **Intake decides curriculum:** a student who entered in AY2025 follows the AY2025 structure even
   when taking classes in AY2026. Setup must ask for intake AY, not just current AY.
 - **Calendar:** encode each trimester as `{ ay, trimester, week1Monday, recessWeeks[], holidays[] }`
@@ -84,8 +85,10 @@ calendar/<AY>.json ─┘          │
 - **Server:** `src/lib/supabase/server.ts` reads with the secret key (never shipped to the browser).
   Term data is fetched in a cached function tagged `dataset:<ay>-<tri>`, which `/api/revalidate`
   invalidates. The browser only ever receives the joined, published payload.
-- **Client state:** no accounts for MVP. The plan lives in localStorage ("Switching keeps your current
-  plan saved on this device", per the design).
+- **Client state:** no accounts for MVP. Plans are saved per programme, intake and trimester in
+  localStorage without an automatic expiry. When a dataset is published for a new trimester,
+  prompt the student to start a plan for it. They can keep using their current plan or switch
+  and return to it later with their picks intact.
 - **Share codes:** the design uses short codes like `BACMODS-7KQ2X`, which are too short to carry a
   plan, so they need server storage: a `share_codes` table (code → programme, intake, term, dataset
   version, selections; no personal data) written by a Next.js route handler with rate limiting.
@@ -175,7 +178,9 @@ on mock data, so the UI isn't waiting on the real APA file.
 - [ ] `AddModuleSearch` for modules not in the curriculum (Addable / Clash / In plan)
 - [ ] `ModuleCard` / `ClassRow` / `SectionOption`: pick a section per lesson type
 - [ ] Selection state ↔ URL ↔ localStorage; selections carry the dataset version they were made on
-- [ ] Section missing after a new version is published → `Banner` asks the student to re-pick
+- [ ] When a new trimester becomes available, offer to start a separate plan for it
+- [ ] Flag changed or removed sections after a dataset update and retain saved picks until the
+  student changes them
 - **Done when:** a student can set up and end with every lesson type assigned a section.
 
 ### M4 — Timetable and clashes
