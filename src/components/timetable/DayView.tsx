@@ -119,7 +119,7 @@ export default function DayView({
                 selected ? "border-primary bg-primary text-on-primary" : "border-line bg-card text-fg"
               }`}
             >
-              <span className="text-small-medium">{DAY_SHORT[d]}</span>
+              <span className="text-small-medium">{DAY_SHORT[d]}</span>{" "}
               <span className="text-caption">{new Date(date).getUTCDate()}</span>
             </button>
           );
