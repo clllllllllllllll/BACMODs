@@ -7,7 +7,7 @@ export const ModuleColorSchema = z.enum(MODULE_COLORS);
 /** moduleCode → lessonType → section id. */
 export const SelectionSchema = z.record(z.string(), z.record(z.string(), z.string()));
 
-export const PlanSchema = z.object({
+export const PlanSchema = z.strictObject({
   programme: z.literal("BAC"),
   /** Intake academic year, e.g. "AY26". */
   intake: z.string(),
@@ -37,3 +37,14 @@ export type ModuleColor = z.infer<typeof ModuleColorSchema>;
 export type Selection = z.infer<typeof SelectionSchema>;
 export type Plan = z.infer<typeof PlanSchema>;
 export type SharePayload = z.infer<typeof SharePayloadSchema>;
+
+/** Read a saved plan, ignoring malformed or unsupported records. */
+export function parsePlan(raw: string | null | undefined): Plan | undefined {
+  if (raw == null) return undefined;
+  try {
+    const parsed = PlanSchema.safeParse(JSON.parse(raw));
+    return parsed.success ? parsed.data : undefined;
+  } catch {
+    return undefined;
+  }
+}

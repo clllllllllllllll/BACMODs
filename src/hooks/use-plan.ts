@@ -2,8 +2,9 @@
 
 import { useSyncExternalStore } from "react";
 import { MOCK_DATASET, MOCK_TERM } from "@/lib/mock/dataset";
-import { defaultSelectionFor, makeInitialPlan, nextColor, normalizeModuleCode, planCodes } from "@/lib/plan";
-import { PlanSchema, type Plan, type SharePayload } from "@/lib/schemas/plan";
+import { makeInitialPlan } from "@/lib/plan";
+import { addModule, pickSection, removeModule, replayEdits, setView, stepWeek, type PlanEdit } from "@/lib/plan-edits";
+import { parsePlan, type Plan, type SharePayload } from "@/lib/schemas/plan";
 
 /**
  * Keep a separate localStorage record for each programme, intake and term, plus an active pointer.
@@ -15,10 +16,9 @@ const ACTIVE_KEY = `${PLAN_PREFIX}active`;
 const DEFAULT_PLAN: Plan = makeInitialPlan(MOCK_DATASET, MOCK_TERM.intake, MOCK_TERM.term);
 const SERVER_SNAPSHOT = { plan: DEFAULT_PLAN, loaded: false };
 type PlanContext = Pick<Plan, "programme" | "intake" | "term">;
-type Edit = (plan: Plan) => Plan;
 
 let snapshot = SERVER_SNAPSHOT;
-const unsaved = new Map<string, { base: Plan; edits: Edit[] }>();
+const unsaved = new Map<string, { base: Plan; edits: PlanEdit[] }>();
 const listeners = new Set<() => void>();
 
 function planKey({ programme, intake, term }: PlanContext): string {
@@ -39,16 +39,6 @@ function write(key: string, value: string): boolean {
     return true;
   } catch {
     return false;
-  }
-}
-
-function parsePlan(raw: string | null | undefined): Plan | undefined {
-  if (raw == null) return;
-  try {
-    const parsed = PlanSchema.safeParse(JSON.parse(raw));
-    if (parsed.success) return parsed.data;
-  } catch {
-    // Ignore damaged records and keep the rest of the store usable.
   }
 }
 
@@ -119,7 +109,7 @@ function migrateLegacy(): void {
   });
 }
 
-function changePlan(context: PlanContext, edit?: Edit, activate = false): Promise<void> {
+function changePlan(context: PlanContext, edit?: PlanEdit, activate = false): Promise<void> {
   const displayed = getSnapshot().plan;
   const key = planKey(context);
   return withWriteLock(() => {
@@ -129,7 +119,7 @@ function changePlan(context: PlanContext, edit?: Edit, activate = false): Promis
     const fallback = [now, displayed].find((plan) => planKey(plan) === key);
     const base = contextPlan(key, raw) ?? pending?.base ?? fallback ?? initialPlan(context, displayed.view);
     const edits = pending?.edits ?? [];
-    const current = edits.reduce((plan, apply) => apply(plan), base);
+    const current = replayEdits(base, edits);
     const next = edit ? edit(current) : current;
     const nextEdits = edit && next !== current ? [...edits, edit] : edits;
 
@@ -146,7 +136,7 @@ function changePlan(context: PlanContext, edit?: Edit, activate = false): Promis
   });
 }
 
-function editDisplayed(edit: Edit): Promise<void> {
+function editDisplayed(edit: PlanEdit): Promise<void> {
   return changePlan(getSnapshot().plan, edit);
 }
 
@@ -156,7 +146,7 @@ function syncDisplayed(): void {
   if (!stored) return;
   const pending = unsaved.get(key);
   if (pending) pending.base = stored;
-  const plan = pending?.edits.reduce((current, apply) => apply(current), stored) ?? stored;
+  const plan = pending ? replayEdits(stored, pending.edits) : stored;
   if (JSON.stringify(plan) !== JSON.stringify(snapshot.plan)) publish(plan);
 }
 
@@ -189,50 +179,19 @@ export const planActions = {
     return changePlan({ programme: plan.programme, intake, term }, undefined, true);
   },
   pickSection(moduleCode: string, lessonType: string, sectionId: string) {
-    return editDisplayed((plan) => {
-      // The module could have been removed in another tab since this choice was displayed.
-      if (!planCodes(plan, MOCK_DATASET).includes(moduleCode)) return plan;
-      return {
-        ...plan,
-        selection: {
-          ...plan.selection,
-          [moduleCode]: { ...plan.selection[moduleCode], [lessonType]: sectionId },
-        },
-      };
-    });
+    return editDisplayed((plan) => pickSection(plan, MOCK_DATASET, moduleCode, lessonType, sectionId));
   },
   addModule(code: string) {
-    return editDisplayed((plan) => {
-      const mod = MOCK_DATASET.modules[code];
-      if (!mod || planCodes(plan, MOCK_DATASET).includes(code)) return plan;
-      return {
-        ...plan,
-        added: [...plan.added, code],
-        colors: { ...plan.colors, [code]: plan.colors[code] ?? nextColor(Object.values(plan.colors)) },
-        selection: { ...plan.selection, [code]: defaultSelectionFor(mod) },
-      };
-    });
+    return editDisplayed((plan) => addModule(plan, MOCK_DATASET, code));
   },
   removeModule(code: string) {
-    return editDisplayed((plan) => {
-      const added = plan.added.filter((c) => normalizeModuleCode(c) !== code);
-      if (added.length === plan.added.length) return plan;
-      const colors = { ...plan.colors };
-      const selection = { ...plan.selection };
-      delete colors[code];
-      delete selection[code];
-      return { ...plan, added, colors, selection };
-    });
+    return editDisplayed((plan) => removeModule(plan, MOCK_DATASET, code));
   },
   setView(view: Plan["view"]) {
-    return editDisplayed((plan) => plan.view === view ? plan : { ...plan, view });
+    return editDisplayed((plan) => setView(plan, view));
   },
   stepWeek(step: -1 | 1) {
-    return editDisplayed((plan) => {
-      const lastWeek = MOCK_DATASET.calendar.teachingWeeks;
-      const week = Math.min(plan.week, lastWeek) + step;
-      return week < 1 || week > lastWeek ? plan : { ...plan, week };
-    });
+    return editDisplayed((plan) => stepWeek(plan, step, MOCK_DATASET.calendar.teachingWeeks));
   },
   loadShared(payload: SharePayload) {
     return changePlan(payload, (plan) => ({ ...plan, ...payload }), true);
