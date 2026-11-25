@@ -32,6 +32,7 @@ test("legacy plans migrate and switching intakes restores each plan", async ({ p
   const structures = page.getByRole("region", { name: "INF1107" });
   await structures.getByRole("button", { name: /Laboratory · pick one/ }).click();
   await structures.locator("label", { hasText: "P2" }).click();
+  await expect(structures.getByText("LAB P2", { exact: true })).toBeVisible();
   await page.reload();
   await expect(structures.getByText("LAB P2", { exact: true })).toBeVisible();
 
@@ -127,6 +128,7 @@ test("day tabs keep the selected weekday across weeks and support keyboard navig
   const friday = tabs.getByRole("tab", { name: /^Fri / });
   const nextWeek = page.getByRole("button", { name: "Next week" });
 
+  await expect(monday).toBeVisible();
   await nextWeek.focus();
   await page.keyboard.press("Tab");
   await expect(monday).toBeFocused();

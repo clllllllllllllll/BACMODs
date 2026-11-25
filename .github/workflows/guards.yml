@@ -1,0 +1,85 @@
+name: Guards
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Resolve pull request commit range
+        id: range
+        shell: pwsh
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          $mergeBase = git merge-base $env:PR_BASE_SHA $env:PR_HEAD_SHA
+          if ($LASTEXITCODE -ne 0 -or -not $mergeBase) {
+            throw 'Could not find the pull request merge base.'
+          }
+          $range = "$mergeBase..$env:PR_HEAD_SHA"
+          "range=$range" >> $env:GITHUB_OUTPUT
+          "diff_range=$env:PR_BASE_SHA...$env:PR_HEAD_SHA" >> $env:GITHUB_OUTPUT
+          Write-Host "Checking commits $range"
+
+      - name: Install Gitleaks v8.30.1
+        shell: bash
+        run: |
+          install_dir=$(mktemp -d)
+          archive="$install_dir/gitleaks.tar.gz"
+          curl --fail --silent --show-error --location --output "$archive" \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  $archive" | sha256sum --check
+          tar -xzf "$archive" -C "$install_dir" gitleaks
+          echo "$install_dir" >> "$GITHUB_PATH"
+
+      - name: Scan pull request commits for secrets
+        shell: pwsh
+        working-directory: ${{ runner.temp }}
+        env:
+          PR_RANGE: ${{ steps.range.outputs.range }}
+        run: |
+          # Use the Git objects without loading scanner config or ignore files from the checkout.
+          $env:GIT_DIR = Join-Path $env:GITHUB_WORKSPACE '.git'
+          gitleaks git --no-banner --no-color --redact=100 --ignore-gitleaks-allow `
+            "--log-opts=--root --diff-merges=first-parent --no-ext-diff --no-textconv $env:PR_RANGE" `
+            $PWD.Path
+          exit $LASTEXITCODE
+
+      - name: Reject forbidden file paths
+        if: ${{ !cancelled() && steps.range.outcome == 'success' }}
+        shell: pwsh
+        env:
+          PR_RANGE: ${{ steps.range.outputs.diff_range }}
+        run: |
+          $forbidden = @(
+            ':(top,glob,icase)**/*.xlsx'
+            ':(top,glob,icase)**/*.xls'
+            ':(top,glob,icase)**/*.csv'
+            ':(top,glob,icase)data/**'
+            ':(top,glob,icase)**/.env*'
+          )
+          # Treat rename destinations as additions so they are checked against the same patterns.
+          $paths = git -c core.quotePath=true diff --name-only --no-renames --diff-filter=AMT `
+            $env:PR_RANGE -- @forbidden
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          $blocked = $paths | Where-Object { $_ -and $_ -cne '.env.example' } | Sort-Object -Unique -CaseSensitive
+          if ($blocked) {
+            foreach ($path in $blocked) { Write-Host "Blocked path $path" }
+            throw 'Pull request changes include forbidden timetable or environment files.'
+          }
