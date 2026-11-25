@@ -1,30 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
-/** Hold the same transaction scope the app uses so both tabs can enqueue edits before either saves. */
+/** Hold the app's write lock so both tabs can enqueue edits before either saves. */
 async function holdPlanWrites(page: Page) {
-  await page.evaluate(async () => {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("bacmods:plan-lock", 1);
-      request.onupgradeneeded = () => request.result.createObjectStore("writes");
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result);
-    });
-    const transaction = db.transaction("writes", "readwrite");
-    const store = transaction.objectStore("writes");
-    let held = true;
-    window.addEventListener("release-plan-writes", () => { held = false; }, { once: true });
-    transaction.oncomplete = () => db.close();
-
-    await new Promise<void>((ready) => {
-      function keepOpen() {
-        store.get(0).onsuccess = () => {
-          ready();
-          if (held) keepOpen();
-        };
-      }
-      keepOpen();
-    });
-  });
+  await page.evaluate(() => new Promise<void>((acquired, reject) => {
+    void navigator.locks.request("bacmods:plan", () => new Promise<void>((release) => {
+      window.addEventListener("release-plan-writes", () => release(), { once: true });
+      acquired();
+    })).catch(reject);
+  }));
   return () => page.evaluate(() => window.dispatchEvent(new Event("release-plan-writes")));
 }
 
@@ -57,6 +40,10 @@ test("overlapping additions and section picks survive in both tabs and after rel
       page.getByRole("button", { name: "Add INF2006" }).click(),
       second.getByRole("button", { name: "Add BAC4000A" }).click(),
     ]);
+    await expect.poll(() => page.evaluate(async () => {
+      const { pending } = await navigator.locks.query();
+      return pending?.filter(({ name }) => name === "bacmods:plan").length;
+    })).toBe(4);
     await expect(page.getByRole("button", { name: "Remove INF2006" })).toHaveCount(0);
     await expect(second.getByRole("button", { name: "Remove BAC4000A" })).toHaveCount(0);
   } finally {
@@ -99,13 +86,44 @@ test("tabs can edit different intakes without switching or merging their plans",
   await expect(second.getByRole("button", { name: /Plan: BAC, AY25/ })).toBeVisible();
 });
 
-test("edits save across reload when Web Locks are unavailable", async ({ page }) => {
-  await page.addInitScript(() => Object.defineProperty(navigator, "locks", { value: undefined }));
-  await page.goto("/modules");
-  await page.getByRole("button", { name: "Add INF2006" }).click();
-  await expect(page.getByRole("button", { name: "Remove INF2006" })).toBeVisible();
+for (const lockFailure of ["Web Locks are unavailable", "the lock request is rejected before the edit"] as const) {
+  test(`edits save across reload when ${lockFailure}`, async ({ page }) => {
+    await page.addInitScript((failure) => {
+      Object.defineProperty(window, "indexedDB", { value: undefined });
+      if (failure === "Web Locks are unavailable") {
+        Reflect.deleteProperty(Navigator.prototype, "locks");
+      } else {
+        navigator.locks.request = () => Promise.reject(new DOMException("Lock unavailable", "NotAllowedError"));
+      }
+    }, lockFailure);
+    await page.goto("/modules");
+    if (lockFailure === "Web Locks are unavailable") {
+      expect(await page.evaluate(() => "locks" in navigator)).toBe(false);
+    }
+    await page.getByRole("button", { name: "Add INF2006" }).click();
+    await expect(page.getByRole("button", { name: "Remove INF2006" })).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole("button", { name: "Remove INF2006" })).toBeVisible();
+  });
+}
+
+test("a lock rejection after an edit starts does not apply it twice", async ({ page }) => {
+  await page.addInitScript(() => {
+    const request = navigator.locks.request.bind(navigator.locks);
+    Object.defineProperty(navigator.locks, "request", {
+      value: (name: string, callback: LockGrantedCallback<void>) => request(name, (lock) => {
+        callback(lock);
+        throw new Error("Lock failed after editing");
+      }),
+    });
+  });
+  await page.goto("/timetable");
+  const failure = page.waitForEvent("pageerror", (error) => error.message === "Lock failed after editing");
+  await page.getByRole("button", { name: "Next week" }).click();
+  await failure;
+  await expect(page.getByText("Week 2", { exact: true })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("button", { name: "Remove INF2006" })).toBeVisible();
+  await expect(page.getByText("Week 2", { exact: true })).toBeVisible();
 });
 
 test("blocked writes stay usable and retry without discarding a peer tab’s edits", async ({ page, context }) => {

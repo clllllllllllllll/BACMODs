@@ -12,15 +12,12 @@ import { PlanSchema, type Plan, type SharePayload } from "@/lib/schemas/plan";
 const LEGACY_KEY = "bacmods:plan:v1";
 const PLAN_PREFIX = "bacmods:plan:v2:";
 const ACTIVE_KEY = `${PLAN_PREFIX}active`;
-const WRITE_DB = "bacmods:plan-lock";
-const WRITE_STORE = "writes";
 const DEFAULT_PLAN: Plan = makeInitialPlan(MOCK_DATASET, MOCK_TERM.intake, MOCK_TERM.term);
 const SERVER_SNAPSHOT = { plan: DEFAULT_PLAN, loaded: false };
 type PlanContext = Pick<Plan, "programme" | "intake" | "term">;
 type Edit = (plan: Plan) => Plan;
 
 let snapshot = SERVER_SNAPSHOT;
-let writeDb: Promise<IDBDatabase> | undefined;
 const unsaved = new Map<string, { base: Plan; edits: Edit[] }>();
 const listeners = new Set<() => void>();
 
@@ -91,60 +88,29 @@ function publish(plan: Plan): void {
   listeners.forEach((listener) => listener());
 }
 
-function openWriteDb(): Promise<IDBDatabase> {
-  writeDb ??= new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open(WRITE_DB, 1);
-    request.onupgradeneeded = () => request.result.createObjectStore(WRITE_STORE);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => {
-      const db = request.result;
-      db.onclose = () => { writeDb = undefined; };
-      db.onversionchange = () => {
-        db.close();
-        writeDb = undefined;
-      };
-      resolve(db);
-    };
-  }).catch((error: unknown) => {
-    writeDb = undefined;
-    throw error;
-  });
-  return writeDb;
-}
-
-/** Read and write localStorage inside a readwrite transaction to serialize edits across tabs. */
-async function withWriteLock(work: (locked: boolean) => void): Promise<void> {
-  let acquired = false;
+/** Keep read-modify-write under the same lock in every tab that supports Web Locks. */
+async function withWriteLock(work: () => void): Promise<void> {
+  let started = false;
   try {
-    const db = await openWriteDb();
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction(WRITE_STORE, "readwrite");
-      transaction.onabort = () => reject(transaction.error);
-      // The store stays empty. A request puts the callback inside this transaction's turn.
-      const request = transaction.objectStore(WRITE_STORE).get(0);
-      request.onsuccess = () => {
-        acquired = true;
-        try {
-          work(true);
-          resolve();
-        } catch (error) {
-          reject(error);
-        }
-      };
-    });
-    return;
+    const locks = navigator.locks;
+    if (locks) {
+      await locks.request("bacmods:plan", () => {
+        started = true;
+        work();
+      });
+      return;
+    }
   } catch (error) {
-    if (acquired) throw error;
+    if (started) throw error;
   }
-  // Without a lock, keep the edits in memory instead of risking an unsafe write.
-  work(false);
+  work();
 }
 
 function migrateLegacy(): void {
   const legacy = parsePlan(read(LEGACY_KEY));
   if (!legacy || activePlan()) return;
-  void withWriteLock((locked) => {
-    if (!locked || activePlan()) return;
+  void withWriteLock(() => {
+    if (activePlan()) return;
     const key = planKey(legacy);
     const raw = read(key);
     if (raw !== undefined && (contextPlan(key, raw) || write(key, JSON.stringify(legacy)))) {
@@ -156,7 +122,7 @@ function migrateLegacy(): void {
 function changePlan(context: PlanContext, edit?: Edit, activate = false): Promise<void> {
   const displayed = getSnapshot().plan;
   const key = planKey(context);
-  return withWriteLock((locked) => {
+  return withWriteLock(() => {
     const raw = read(key);
     const pending = unsaved.get(key);
     const now = getSnapshot().plan;
@@ -168,7 +134,7 @@ function changePlan(context: PlanContext, edit?: Edit, activate = false): Promis
     const nextEdits = edit && next !== current ? [...edits, edit] : edits;
 
     if (activate || nextEdits.length > 0) {
-      if (locked && raw !== undefined && write(key, JSON.stringify(next))) {
+      if (raw !== undefined && write(key, JSON.stringify(next))) {
         unsaved.delete(key);
         if (activate) write(ACTIVE_KEY, key);
       } else {
