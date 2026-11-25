@@ -38,8 +38,8 @@ test.describe("Accessibility", () => {
   test("Timetable day view", async ({ page }) => {
     await page.goto("/timetable");
     await page.getByRole("button", { name: "Day", exact: true }).click();
-    const monday = page.getByRole("tabpanel", { name: /^Monday/ });
-    await expect(monday.getByText("INF1105", { exact: true })).toBeVisible();
+    const day = page.getByRole("tabpanel", { name: "Mon 11 Jan", exact: true });
+    await expect(day.getByText("INF1105", { exact: true })).toBeVisible();
     await expectAccessible(page);
   });
 

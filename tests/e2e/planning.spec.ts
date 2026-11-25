@@ -121,9 +121,9 @@ test("day tabs keep the selected weekday across weeks and support keyboard navig
   await page.goto("/timetable");
   await page.getByRole("button", { name: "Day", exact: true }).click();
   const tabs = page.getByRole("tablist", { name: "Day" });
-  const monday = tabs.getByRole("tab", { name: /^Monday/ });
-  const tuesday = tabs.getByRole("tab", { name: /^Tuesday/ });
-  const friday = tabs.getByRole("tab", { name: /^Friday/ });
+  const monday = tabs.getByRole("tab", { name: /^Mon / });
+  const tuesday = tabs.getByRole("tab", { name: /^Tue / });
+  const friday = tabs.getByRole("tab", { name: /^Fri / });
   const nextWeek = page.getByRole("button", { name: "Next week" });
 
   await nextWeek.focus();
@@ -134,7 +134,7 @@ test("day tabs keep the selected weekday across weeks and support keyboard navig
   await expect(tuesday).toHaveAttribute("aria-selected", "true");
   await expect(tabs.locator('[tabindex="0"]')).toHaveCount(1);
   await expect(monday).toHaveAttribute("tabindex", "-1");
-  const panel = page.getByRole("tabpanel", { name: /^Tuesday/ });
+  const panel = page.getByRole("tabpanel", { name: /^Tue / });
   await expect(panel.getByText("INF1107", { exact: true })).toBeVisible();
   await page.keyboard.press("Tab");
   await expect(panel).toBeFocused();
@@ -142,7 +142,7 @@ test("day tabs keep the selected weekday across weeks and support keyboard navig
   await nextWeek.dblclick();
   await expect(page.getByText("Week 3", { exact: true })).toBeVisible();
   await expect(tuesday).toHaveAttribute("aria-selected", "true");
-  await expect(tuesday).toHaveAccessibleName("Tuesday 26 Jan");
+  await expect(tuesday).toHaveAccessibleName("Tue 26 Jan");
   await expect(panel.getByText("INF1107", { exact: true })).toBeVisible();
 
   await tuesday.press("End");

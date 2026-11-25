@@ -111,7 +111,7 @@ export default function DayView({
               ref={d === 6 ? saturdayTab : undefined}
               aria-selected={selected}
               aria-controls={panelId}
-              aria-label={`${DAY_LONG[d]} ${formatDayMonth(date)}`}
+              aria-label={`${DAY_SHORT[d]} ${formatDayMonth(date)}`}
               tabIndex={selected ? 0 : -1}
               onClick={() => setDay(d)}
               onKeyDown={(event) => moveFocus(event, index)}
