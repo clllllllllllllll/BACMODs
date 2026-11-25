@@ -149,6 +149,11 @@ The Components page contains **42 named components and component sets**, countin
 
 ## 7. States
 
+On a first visit to any planner page, open Setup before showing the timetable, module choices
+or export controls. After the student confirms their programme, intake and trimester or loads
+a valid share code, return to the requested page. A saved plan or a valid share link supplies
+the setup automatically. Starting from the home page opens Modules after setup.
+
 | State | Source treatment and implementation guidance |
 | --- | --- |
 | Hover | **Applies on desktop (1024 px and up) and wherever a pointer hovers.** On an available menu row or secondary button, use the page-gray fill. Keep a selected tab’s underline in place on pointer entry. Expose every action to touch and keyboard users. |

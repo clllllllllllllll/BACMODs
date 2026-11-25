@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { startPlanningAt } from "./setup";
 
 async function expectAccessible(page: Page) {
   const { violations } = await new AxeBuilder({ page }).analyze();
@@ -27,7 +28,7 @@ test.describe("Accessibility", () => {
   });
 
   test("Modules", async ({ page, viewport }) => {
-    await page.goto("/modules");
+    await startPlanningAt(page, "/modules");
     await expect(page.getByRole("heading", { name: "Modules", level: 1 })).toBeVisible();
     if (viewport?.width === 1440) {
       await expect(page.getByRole("complementary", { name: "Week preview" })).toBeVisible();
@@ -36,7 +37,7 @@ test.describe("Accessibility", () => {
   });
 
   test("Timetable day view", async ({ page }) => {
-    await page.goto("/timetable");
+    await startPlanningAt(page, "/timetable");
     await page.getByRole("button", { name: "Day", exact: true }).click();
     const day = page.getByRole("tabpanel", { name: "Mon 11 Jan", exact: true });
     await expect(day.getByText("INF1105", { exact: true })).toBeVisible();
@@ -44,7 +45,7 @@ test.describe("Accessibility", () => {
   });
 
   test("Timetable week view", async ({ page }) => {
-    await page.goto("/timetable");
+    await startPlanningAt(page, "/timetable");
     await page.getByRole("button", { name: "Week", exact: true }).click();
     const week = page.getByRole("group", { name: "Week timetable" });
     await expect(week.getByRole("img", { name: /^INF1105 LTR ALL/ })).toBeVisible();
@@ -52,13 +53,13 @@ test.describe("Accessibility", () => {
   });
 
   test("Export", async ({ page }) => {
-    await page.goto("/export");
+    await startPlanningAt(page, "/export");
     await expect(page.getByRole("button", { name: "Copy list" })).toBeEnabled();
     await expectAccessible(page);
   });
 
   test("open Setup sheet", async ({ page }) => {
-    await page.goto("/modules");
+    await startPlanningAt(page, "/modules");
     await page.getByRole("button", { name: /^Plan: BAC,/ }).click();
     const setup = page.getByRole("dialog", { name: "Your plan" });
     await expect(setup.getByRole("button", { name: "Update plan" })).toBeVisible();
@@ -66,7 +67,7 @@ test.describe("Accessibility", () => {
   });
 
   test("open Share dialog", async ({ page }) => {
-    await page.goto("/export");
+    await startPlanningAt(page, "/export");
     await page.getByRole("button", { name: /^Share code/ }).click();
     const share = page.getByRole("dialog", { name: "Share your plan" });
     await expect(share.getByRole("button", { name: "Copy share code" })).toBeVisible();

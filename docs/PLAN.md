@@ -132,6 +132,8 @@ on mock data, so the UI isn't waiting on the real APA file.
 - [x] All four screens rendered from a typed mock dataset matching the prototype (INF1105, INF1107,
   INF2008, AAI1001, INF2006, BAC4000A)
 - [x] Mobile, tablet and desktop layouts follow `design.md` §4
+- [x] Require a saved plan, completed Setup or a valid share import before opening a planner page.
+  After Setup, return the student to the page they originally requested.
 - [x] Playwright smoke and regression tests at 390, 768, 1024 and 1440 px against the Docker image
   built from the checked-out commit. The smoke flow covers setup → modules → timetable → export.
 - [x] Run axe accessibility checks on all four screens, both timetable views, the Setup sheet

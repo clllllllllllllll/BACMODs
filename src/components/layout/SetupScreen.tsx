@@ -7,13 +7,31 @@ import { MOCK_DATASET } from "@/lib/mock/dataset";
 
 function StartPlanning() {
   const router = useRouter();
-  const shareInput = useSearchParams().get("share");
+  const params = useSearchParams();
+  const next = params.get("next");
+
+  function finish(fromLink?: boolean) {
+    let destination = "/modules";
+    if (next?.startsWith("/")) {
+      try {
+        const url = new URL(next, window.location.origin);
+        if (url.origin === window.location.origin && url.pathname !== "/" && !url.pathname.startsWith("//")) {
+          destination = url.pathname + url.search + url.hash;
+        }
+      } catch {
+        // An invalid return link still leads to the student's modules.
+      }
+    }
+    if (fromLink || next) router.replace(destination);
+    else router.push(destination);
+  }
+
   return (
     <SetupForm
       submitLabel="Start planning"
       large
-      shareInput={shareInput}
-      onDone={(fromLink) => fromLink ? router.replace("/modules") : router.push("/modules")}
+      shareInput={params.get("share")}
+      onDone={finish}
     />
   );
 }

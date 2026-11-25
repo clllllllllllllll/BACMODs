@@ -89,6 +89,8 @@ function SetupFields({ plan, submitLabel, large, shareInput, onDone }: SetupForm
     void loadShared(payload, false);
   }
 
+  if (linkedPlan && online) return <SetupPlaceholder />;
+
   return (
     <div className="flex flex-col gap-5">
       <form onSubmit={submit} className="flex flex-col gap-4">

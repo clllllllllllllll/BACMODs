@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
+import { Suspense } from "react";
+import RequireSetup from "@/components/layout/RequireSetup";
 import { ToastProvider } from "@/components/ui/Toast";
 import "./globals.css";
 
@@ -21,7 +23,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={inter.variable}>
       <body>
-        <ToastProvider>{children}</ToastProvider>
+        <ToastProvider>
+          <Suspense>
+            <RequireSetup>{children}</RequireSetup>
+          </Suspense>
+        </ToastProvider>
       </body>
     </html>
   );

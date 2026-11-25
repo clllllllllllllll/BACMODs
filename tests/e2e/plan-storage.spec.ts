@@ -1,4 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
+import { startPlanningAt } from "./setup";
+
+test.beforeEach(async ({ page }) => {
+  await startPlanningAt(page, "/modules");
+});
 
 /** Hold the app's write lock so both tabs can enqueue edits before either saves. */
 async function holdPlanWrites(page: Page) {

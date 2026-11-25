@@ -14,7 +14,7 @@ const LEGACY_KEY = "bacmods:plan:v1";
 const PLAN_PREFIX = "bacmods:plan:v2:";
 const ACTIVE_KEY = `${PLAN_PREFIX}active`;
 const DEFAULT_PLAN: Plan = makeInitialPlan(MOCK_DATASET, MOCK_TERM.intake, MOCK_TERM.term);
-const SERVER_SNAPSHOT = { plan: DEFAULT_PLAN, loaded: false };
+const SERVER_SNAPSHOT = { plan: DEFAULT_PLAN, loaded: false, configured: false };
 type PlanContext = Pick<Plan, "programme" | "intake" | "term">;
 
 let snapshot = SERVER_SNAPSHOT;
@@ -55,9 +55,10 @@ function activePlan(): Plan | undefined {
 function getSnapshot() {
   if (!snapshot.loaded) {
     const stored = activePlan();
-    const fallback = stored ?? parsePlan(read(LEGACY_KEY)) ?? DEFAULT_PLAN;
-    const key = planKey(fallback);
-    snapshot = { plan: stored ?? contextPlan(key, read(key)) ?? fallback, loaded: true };
+    const legacy = stored ? undefined : parsePlan(read(LEGACY_KEY));
+    const key = planKey(stored ?? legacy ?? DEFAULT_PLAN);
+    const saved = stored ?? contextPlan(key, read(key)) ?? legacy;
+    snapshot = { plan: saved ?? DEFAULT_PLAN, loaded: true, configured: !!saved };
   }
   return snapshot;
 }
@@ -72,9 +73,9 @@ function initialPlan(context: PlanContext, view: Plan["view"]): Plan {
   };
 }
 
-function publish(plan: Plan): void {
-  if (snapshot.plan === plan) return;
-  snapshot = { plan, loaded: true };
+function publish(plan: Plan, configured = snapshot.configured): void {
+  if (snapshot.plan === plan && snapshot.configured === configured) return;
+  snapshot = { plan, loaded: true, configured };
   listeners.forEach((listener) => listener());
 }
 
@@ -132,7 +133,7 @@ function changePlan(context: PlanContext, edit?: PlanEdit, activate = false): Pr
         unsaved.set(key, { base, edits: nextEdits });
       }
     }
-    if (activate || planKey(now) === key) publish(next);
+    if (activate || planKey(now) === key) publish(next, activate || snapshot.configured);
   });
 }
 
@@ -141,6 +142,11 @@ function editDisplayed(edit: PlanEdit): Promise<void> {
 }
 
 function syncDisplayed(): void {
+  if (!getSnapshot().configured) {
+    const saved = activePlan();
+    if (saved) publish(saved, true);
+    return;
+  }
   const key = planKey(getSnapshot().plan);
   const stored = contextPlan(key, read(key));
   if (!stored) return;
@@ -151,7 +157,7 @@ function syncDisplayed(): void {
 }
 
 function onStorage(event: StorageEvent): void {
-  if (event.key !== planKey(getSnapshot().plan)) return;
+  if (event.key !== planKey(getSnapshot().plan) && (snapshot.configured || event.key !== ACTIVE_KEY)) return;
   try {
     if (event.storageArea !== window.localStorage) return;
   } catch {

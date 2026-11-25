@@ -1,4 +1,5 @@
 import { expect, test, type Locator } from "@playwright/test";
+import { startPlanningAt } from "./setup";
 
 const unavailable = "Curriculum for AY25 · Y1T2 is unavailable. You can still add modules below.";
 const invalidCode = "That code doesn't match a saved plan. Check it and try again.";
@@ -49,7 +50,7 @@ test("legacy plans migrate and switching intakes restores each plan", async ({ p
 });
 
 test("search badges use the defaults applied by Add", async ({ page }) => {
-  await page.goto("/modules");
+  await startPlanningAt(page, "/modules");
   const structures = page.getByRole("region", { name: "INF1107" });
   await structures.getByRole("button", { name: /Quiz · pick one/ }).click();
   await structures.locator("label", { hasText: "Q2" }).click();
@@ -118,7 +119,7 @@ test("an unsupported saved term shows a setup path and no sample timetable", asy
 });
 
 test("day tabs keep the selected weekday across weeks and support keyboard navigation", async ({ page }) => {
-  await page.goto("/timetable");
+  await startPlanningAt(page, "/timetable");
   await page.getByRole("button", { name: "Day", exact: true }).click();
   const tabs = page.getByRole("tablist", { name: "Day" });
   const monday = tabs.getByRole("tab", { name: /^Mon / });
@@ -175,7 +176,7 @@ test("copy list is disabled for an empty plan and copies the displayed sections 
 });
 
 test("Auto-pick handles arrow keys only inside the menu", async ({ page }) => {
-  await page.goto("/modules");
+  await startPlanningAt(page, "/modules");
   const trigger = page.getByRole("button", { name: "Auto-pick" });
   const menu = page.getByRole("menu", { name: "Auto-pick options" });
   const first = menu.getByRole("menuitem", { name: "Fewest days on campus" });
@@ -219,7 +220,7 @@ test("an unknown direct share link shows the field error and preserves the enter
 
 test("clipboard feedback stays visible and announced in the share dialog", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.goto("/export");
+  await startPlanningAt(page, "/export");
   await page.getByRole("button", { name: /^Share code/ }).click();
   const share = page.getByRole("dialog", { name: "Share your plan" });
   const status = share.getByRole("status");
@@ -238,7 +239,7 @@ test("clipboard feedback stays visible and announced in the share dialog", async
 });
 
 test("going offline explains and disables code sharing until the connection returns", async ({ page, context }) => {
-  await page.goto("/export");
+  await startPlanningAt(page, "/export");
   await page.getByRole("button", { name: /^Share code/ }).click();
   const share = page.getByRole("dialog", { name: "Share your plan" });
   const copy = share.getByRole("button", { name: "Copy share code" });
@@ -294,7 +295,7 @@ async function expectReadableLanes(grid: Locator, labels: string[]) {
 
 test("the desktop preview and timetable fit two and three concurrent class labels", async ({ page }) => {
   test.skip((page.viewportSize()?.width ?? 0) < 1024, "The live week preview starts at 1024 px");
-  await page.goto("/modules");
+  await startPlanningAt(page, "/modules");
   await page.getByRole("button", { name: "Add BAC4000A" }).click();
   const preview = page.getByRole("complementary", { name: "Week preview" });
   const previewGrid = preview.getByRole("group", { name: "Week timetable" });
