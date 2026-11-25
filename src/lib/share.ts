@@ -1,4 +1,13 @@
+import { z } from "zod";
+import { SharePayloadSchema, type SharePayload } from "@/lib/schemas/plan";
+
 const CODE_PATTERN = /^BACMODS-[A-Z0-9]{5}$/;
+const SHARE_RECORD_VERSION = 1;
+
+const ShareRecordSchema = z.object({
+  version: z.literal(SHARE_RECORD_VERSION),
+  payload: SharePayloadSchema,
+});
 
 /**
  * Accepts a bare code ("BACMODS-7KQ2X") or a link ("https://…/?share=BACMODS-7KQ2X").
@@ -16,4 +25,15 @@ export function parseShareInput(input: string): string | null {
   }
   candidate = candidate.trim().toUpperCase();
   return CODE_PATTERN.test(candidate) ? candidate : null;
+}
+
+export function makeShareRecord(payload: SharePayload): z.infer<typeof ShareRecordSchema> {
+  return { version: SHARE_RECORD_VERSION, payload };
+}
+
+export function lookupShare(input: string, records: Readonly<Record<string, unknown>>): SharePayload | null {
+  const code = parseShareInput(input);
+  if (!code) return null;
+  const parsed = ShareRecordSchema.safeParse(records[code]);
+  return parsed.success ? parsed.data.payload : null;
 }
