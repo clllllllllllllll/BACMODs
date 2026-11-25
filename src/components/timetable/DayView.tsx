@@ -33,7 +33,7 @@ function DayEvent({ item, clash }: { item: PlannedSession; clash: boolean }) {
         <p className="text-body-medium text-fg">
           {lessonTypeName(item.lessonType)} · {item.sectionId}
         </p>
-        <p className="mt-0.5 flex items-center gap-1 text-small text-fg-secondary">
+        <p className="mt-0.5 flex items-center gap-1 text-small text-fg">
           <Icon name="map-pin" size={12} />
           {venueLabel(item.session)}
         </p>
